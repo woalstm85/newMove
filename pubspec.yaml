@@ -77,16 +77,7 @@ flutter_launcher_icons:
   macos:
     generate: true
 
-#flutter_native_splash:
-#  color: "#2C3E50"  # 앱 아이콘의 배경색과 동일한 색상 사용
-#  image: "assets/splash/splash_icon.png"
-#  android: true
-#  ios: true
-#  web: true
-#  android_12:
-#    image: "assets/splash/splash_icon.png"
-#    color: "#2C3E50"
-#  fullscreen: true
+
 
 flutter:
 

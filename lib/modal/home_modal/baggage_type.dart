@@ -169,7 +169,7 @@ class _BaggageTypeModalState extends State<BaggageTypeModal> {
                   if (isPhotoSelected == true) {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => const RoomPhotoScreen()));
                   } else {
-                    // Navigator.push(context, MaterialPageRoute(builder: (context) => const BaggageListScreen()));
+                     Navigator.push(context, MaterialPageRoute(builder: (context) => const BaggageListScreen()));
                   }
                 }
                     : null,

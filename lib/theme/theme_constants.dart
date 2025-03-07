@@ -30,6 +30,7 @@ class AppTheme {
 
   // 테두리 및 구분선 색상
   static const Color borderColor = Color(0xFFEEF0F5);
+  static const Color borderSubColor = Color(0xFFEAECF0);
 
   // 그림자 효과
   static BoxShadow cardShadow = BoxShadow(
