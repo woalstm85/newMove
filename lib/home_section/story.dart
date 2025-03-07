@@ -1,55 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'story_webview.dart';
 import '../theme/theme_constants.dart';
 
-class StorySlider extends StatefulWidget {
-  const StorySlider({super.key});
+class StorySlider extends StatelessWidget {
+  final List<dynamic> stories;
+  final bool isLoading;
 
-  @override
-  _StorySliderState createState() => _StorySliderState();
-}
-
-class _StorySliderState extends State<StorySlider> {
-  List<dynamic> stories = [];
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    fetchStoryData();
-  }
-
-  Future<void> fetchStoryData() async {
-    try {
-      const url = 'http://moving.stst.co.kr/api/api/Story';
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        setState(() {
-          stories = json.decode(response.body);
-          isLoading = false;
-        });
-      } else {
-        throw Exception('Failed to load story data');
-      }
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      print('Error fetching stories: $e');
-    }
-  }
-
-  void _openWebView(String blogUrl) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => WebViewScreen(blogUrl: blogUrl),
-      ),
-    );
-  }
+  const StorySlider({
+    super.key,
+    required this.stories,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +22,7 @@ class _StorySliderState extends State<StorySlider> {
       return _buildEmptyState();
     }
 
-    return _buildStoryList();
+    return _buildStoryList(context);
   }
 
   // 로딩 상태 UI
@@ -131,8 +92,17 @@ class _StorySliderState extends State<StorySlider> {
     );
   }
 
+  void _openWebView(BuildContext context, String blogUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => WebViewScreen(blogUrl: blogUrl),
+      ),
+    );
+  }
+
   // 스토리 리스트 UI
-  Widget _buildStoryList() {
+  Widget _buildStoryList(BuildContext context) {
     return SizedBox(
       height: 250,
       child: ListView.builder(
@@ -147,7 +117,7 @@ class _StorySliderState extends State<StorySlider> {
           final String blogUrl = story['blogUrl'] ?? '';
 
           return GestureDetector(
-            onTap: () => _openWebView(blogUrl),
+            onTap: () => _openWebView(context, blogUrl),
             child: Container(
               width: 280,
               margin: EdgeInsets.only(

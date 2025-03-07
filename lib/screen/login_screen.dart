@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'bottom_navigation.dart';
 import 'email_signup_screen.dart';
 import '../theme/theme_constants.dart';
+import '../api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,21 +30,57 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
       if (account != null) {
-        // 로그인 성공 시 BottomNavigationBarWidget의 더보기 탭으로 이동
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const BottomNavigationBarWidget(initialIndex: 4), // 더보기 탭으로 이동
-          ),
-        );
+        // 로그인 성공 시 별도 메서드 호출
+        _navigateAfterLogin(account);
       }
     });
+  }
+
+// 로그인 성공 후 네비게이션을 처리하는 별도 메서드
+  Future<void> _navigateAfterLogin(GoogleSignInAccount account) async {
+    // 데이터를 로드한 후 네비게이션
+    Map<String, dynamic> preloadedData = await _preloadData();
+
+    // 더보기 탭으로 이동
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BottomNavigationBarWidget(
+          initialIndex: 4,
+          preloadedData: preloadedData,
+        ),
+      ),
+    );
   }
 
   @override
   void dispose() {
     _subscription.cancel();
     super.dispose();
+  }
+
+  Future<Map<String, dynamic>> _preloadData() async {
+    try {
+      // 병렬로 API 호출
+      final results = await Future.wait([
+        ApiService.fetchReviews(),
+        ApiService.fetchPartnerList(),
+        ApiService.fetchStoryList(),
+      ]);
+
+      return {
+        'reviews': results[0],
+        'partners': results[1],
+        'stories': results[2],
+      };
+    } catch (e) {
+      print('데이터 미리 로드 중 오류 발생: $e');
+      return {
+        'reviews': [],
+        'partners': [],
+        'stories': [],
+      };
+    }
   }
 
   // Google 로그인 함수

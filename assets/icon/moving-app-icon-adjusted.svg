@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <!-- Background -->
+  <rect width="500" height="500" rx="100" fill="#2C3E50"/>
+  
+  <!-- Truck Silhouette -->
+  <path d="M180 380 
+           L280 380 
+           C300 380, 310 360, 310 340 
+           V280 
+           C310 260, 330 240, 350 240 
+           H430 
+           V180 
+           C430 160, 410 140, 390 140 
+           H260 
+           V110 
+           C260 90, 240 70, 220 70 
+           H130 
+           C110 70, 90 90, 90 110 
+           V340 
+           C90 360, 110 380, 130 380" 
+        fill="#3498DB"/>
+  
+  <!-- Wheels -->
+  <circle cx="200" cy="380" r="40" fill="#2980B9"/>
+  <circle cx="380" cy="380" r="40" fill="#2980B9"/>
+  
+  <!-- Moving Boxes -->
+  <rect x="300" y="280" width="60" height="40" fill="#ECF0F1" rx="5"/>
+  <rect x="370" y="280" width="60" height="40" fill="#BDC3C7" rx="5"/>
+</svg>

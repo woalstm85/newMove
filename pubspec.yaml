@@ -1,5 +1,5 @@
-name: move
-description: "A new Flutter project."
+name: MoveSmart
+description: "이사관리 앱"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -40,10 +40,9 @@ dependencies:
   table_calendar: ^3.2.0
   path_provider: ^2.1.5
   image_picker: ^1.1.2
-
-
-
-
+  flutter_launcher_icons: ^0.14.3
+  splash_screen_view: ^2.0.1
+  shimmer: ^3.0.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -64,6 +63,31 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  app_name: "MoveSmart"
+  min_sdk_android: 21
+  web:
+    generate: true
+  windows:
+    generate: true
+  macos:
+    generate: true
+
+#flutter_native_splash:
+#  color: "#2C3E50"  # 앱 아이콘의 배경색과 동일한 색상 사용
+#  image: "assets/splash/splash_icon.png"
+#  android: true
+#  ios: true
+#  web: true
+#  android_12:
+#    image: "assets/splash/splash_icon.png"
+#    color: "#2C3E50"
+#  fullscreen: true
+
 flutter:
 
   assets:

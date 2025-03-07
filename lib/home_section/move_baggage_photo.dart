@@ -78,6 +78,7 @@ class _RoomPhotoScreenState extends State<RoomPhotoScreen> {
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: AppTheme.primaryText),
           onPressed: () => Navigator.pop(context),

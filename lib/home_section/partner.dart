@@ -4,30 +4,15 @@ import '../api_service.dart';
 import '../theme/theme_constants.dart';
 import '../screen/partner_detail_screen.dart';
 
-class CircleSlider extends StatefulWidget {
-  const CircleSlider({super.key});
+class CircleSlider extends StatelessWidget {
+  final List<dynamic> partners;
+  final bool isLoading;
 
-  @override
-  _CircleSliderState createState() => _CircleSliderState();
-}
-
-class _CircleSliderState extends State<CircleSlider> {
-  List<dynamic> companies = [];
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    fetchCompanyData();
-  }
-
-  Future<void> fetchCompanyData() async {
-    List<dynamic> fetchedPartners = await ApiService.fetchPartnerList();
-    setState(() {
-      companies = fetchedPartners ?? [];
-      isLoading = false;
-    });
-  }
+  const CircleSlider({
+    super.key,
+    required this.partners,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,11 +20,11 @@ class _CircleSliderState extends State<CircleSlider> {
       return _buildLoadingState();
     }
 
-    if (companies.isEmpty) {
+    if (partners.isEmpty) {
       return _buildEmptyState();
     }
 
-    return _buildPartnerList();
+    return _buildPartnerList(context);
   }
 
   // 로딩 상태 UI
@@ -102,15 +87,15 @@ class _CircleSliderState extends State<CircleSlider> {
   }
 
   // 파트너 리스트 UI
-  Widget _buildPartnerList() {
+  Widget _buildPartnerList(BuildContext context) {
     return Container(
       height: 160,
       margin: const EdgeInsets.only(bottom: 8),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: companies.length,
+        itemCount: partners.length,
         itemBuilder: (context, index) {
-          final company = companies[index];
+          final company = partners[index];
 
           // 이미지 URL 확인
           String? imageUrl;

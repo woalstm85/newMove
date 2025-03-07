@@ -4,38 +4,27 @@ import 'review_detail.dart';
 import '../api_service.dart';
 import '../theme/theme_constants.dart';
 
-class ReviewSlider extends StatefulWidget {
-  const ReviewSlider({super.key});
+class ReviewSlider extends StatelessWidget {
+  final List<dynamic> reviews;
+  final bool isLoading;
 
-  @override
-  _ReviewSliderState createState() => _ReviewSliderState();
-}
-
-class _ReviewSliderState extends State<ReviewSlider> {
-  List<dynamic> reviews = [];
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    loadReviews();
-  }
-
-  Future<void> loadReviews() async {
-    List<dynamic> fetchedReviews = await ApiService.fetchReviews();
-    setState(() {
-      reviews = fetchedReviews ?? [];
-      isLoading = false;
-    });
-  }
+  const ReviewSlider({
+    super.key,
+    required this.reviews,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return isLoading
-        ? _buildLoadingState()
-        : reviews.isEmpty
-        ? _buildEmptyState()
-        : _buildReviewList();
+    if (isLoading) {
+      return _buildLoadingState();
+    }
+
+    if (reviews.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return _buildReviewList(context);
   }
 
   // 로딩 상태 UI
@@ -105,7 +94,7 @@ class _ReviewSliderState extends State<ReviewSlider> {
   }
 
   // 리뷰 리스트 UI
-  Widget _buildReviewList() {
+  Widget _buildReviewList(BuildContext context) {
     return SizedBox(
       height: 220,
       child: ListView.builder(
@@ -131,8 +120,22 @@ class _ReviewSliderState extends State<ReviewSlider> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => ReviewDetailScreen(reviewId: id.toString()),
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                      ReviewDetailScreen(reviewId: id.toString()),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    const begin = Offset(0.0, 1.0); // 화면 아래에서 시작
+                    const end = Offset.zero;
+                    const curve = Curves.easeOut;
+
+                    var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                    var offsetAnimation = animation.drive(tween);
+
+                    return SlideTransition(
+                      position: offsetAnimation,
+                      child: child,
+                    );
+                  },
                 ),
               );
             },

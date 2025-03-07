@@ -9,8 +9,13 @@ import '../theme/theme_constants.dart';
 
 class BottomNavigationBarWidget extends StatefulWidget {
   final int initialIndex; // 초기 탭을 설정하는 매개변수
+  final Map<String, dynamic> preloadedData;
 
-  const BottomNavigationBarWidget({super.key, this.initialIndex = 0}); // 기본값을 0으로 설정
+  const BottomNavigationBarWidget({
+    super.key,
+    this.initialIndex = 0,
+    required this.preloadedData,
+  }); // 기본값을 0으로 설정
 
   @override
   _BottomNavigationBarWidgetState createState() => _BottomNavigationBarWidgetState();
@@ -85,15 +90,15 @@ class _BottomNavigationBarWidgetState extends State<BottomNavigationBarWidget> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          const HomeScreen(), // 홈 화면
-          const PartnerSearchScreen(), // 파트너 찾기 화면
+          HomeScreen(preloadedData: widget.preloadedData), // preloadedData 전달
+          const PartnerSearchScreen(),
           _currentUser == null
-              ? const LoginScreen() // 로그인하지 않은 상태면 LoginScreen 표시
-              : MyUsageHistoryScreen(userEmail: _currentUser!.email), // 로그인된 상태면 이용내역 화면
-          const PlaceholderWidget('채팅'), // 채팅 화면
+              ? const LoginScreen()
+              : MyUsageHistoryScreen(userEmail: _currentUser!.email),
+          const PlaceholderWidget('채팅'),
           MoreScreen(
             userEmail: _currentUser?.email,
-            onLogout: _handleLogout, // 로그아웃 처리 함수 전달
+            onLogout: _handleLogout,
           ),
         ],
       ),
