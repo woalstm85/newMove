@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/theme_constants.dart';
+import 'banner_free.dart';
+import 'banner_new_user.dart';
+import 'banner_safe.dart';
 
 class BannerSection extends StatelessWidget {
   final int currentPage;
@@ -20,19 +23,19 @@ class BannerSection extends StatelessWidget {
       {
         'title': '신규 가입자 프로모션',
         'description': '신규 가입자에게 첫 이사 서비스 10% 할인 혜택을 드립니다',
-        'color': const [Color(0xFF009688), Color(0xFF26A69A)],
+        'color': const [Color(0xFF8864EF), Color(0xFF9B87EF)], // accentColor(보라색) 사용
         'icon': Icons.local_offer_outlined,
       },
       {
         'title': '무료 견적 서비스',
         'description': '이사 전 무료 방문 견적을 통해 정확한 견적을 확인하세요',
-        'color': const [Color(0xFFFF9045), Color(0xFFFFAB45)],
+        'color': const [Color(0xFFFF9045), Color(0xFFFFAB45)], // secondaryColor(주황색) 유지
         'icon': Icons.calculate_outlined,
       },
       {
         'title': '안전한 이사 보장',
         'description': '손상 물품에 대한 보상 서비스로 안전한 이사를 약속합니다',
-        'color': const [Color(0xFF8864EF), Color(0xFF9B87EF)],
+        'color': const [Color(0xFF5C6BC0), Color(0xFF7986CB)], // 인디고 계열로 변경
         'icon': Icons.shield_outlined,
       },
     ];
@@ -92,9 +95,26 @@ class BannerSection extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 16),
+
                             ElevatedButton(
                               onPressed: () {
-                                // 배너 버튼 액션
+                                // 배너 인덱스에 따라 다른 페이지로 이동
+                                if (bannerIndex == 0) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const NewUserPromotionScreen()),
+                                  );
+                                } else if (bannerIndex == 1) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const FreeQuoteScreen()),
+                                  );
+                                } else if (bannerIndex == 2) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const SafeMovingScreen()),
+                                  );
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,

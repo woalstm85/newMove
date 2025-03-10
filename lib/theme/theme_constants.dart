@@ -6,6 +6,7 @@ class AppTheme {
   static const Color primaryColor = Color(0xFF4E7CFF); // 주요 색상 (파란색 계열)
   static const Color secondaryColor = Color(0xFFFF9045); // 보조 색상 (주황색 계열)
   static const Color accentColor = Color(0xFF8864EF); // 강조 색상 (보라색 계열)
+  static const Color greenColor = Color(0xFF009688); // 강조 색상 (녹색 계열)
 
   // 배경 색상
   static const Color scaffoldBackground = Color(0xFFFAFAFC); // 연한 그레이 배경

@@ -427,25 +427,8 @@ class MoreScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          _buildMenuTile(
-            icon: Icons.card_giftcard,
-            iconColor: Colors.orange,
-            title: '내 쿠폰',
-            subtitle: userEmail != null ? '사용 가능한 쿠폰 확인하기' : '로그인 후 이용 가능합니다',
-            trailing: userEmail != null ? '쿠폰 등록' : null,
-            onTap: () {
-              // 비로그인 상태면 로그인 화면으로 이동
-              if (userEmail == null) {
-                _navigateToLogin(context);
-                return;
-              }
-              // 쿠폰 페이지로 이동 (로그인 상태인 경우)
-            },
-          ),
-          Divider(height: 1, indent: 60),
-          _buildMenuTile(
+      child:
+              _buildMenuTile(
             icon: Icons.share,
             iconColor: Colors.green,
             title: '친구 초대',
@@ -459,8 +442,7 @@ class MoreScreen extends StatelessWidget {
               // 초대 기능 실행 (로그인 상태인 경우)
             },
           ),
-        ],
-      ),
+
     );
   }
 

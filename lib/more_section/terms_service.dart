@@ -15,7 +15,9 @@ class TermsOfServiceScreen extends StatefulWidget {
 class _TermsOfServiceScreenState extends State<TermsOfServiceScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  late ScrollController _scrollController;
+
+  // 각 탭마다 별도의 스크롤 컨트롤러 사용
+  final List<ScrollController> _scrollControllers = [];
   bool _showScrollUpButton = false;
 
   final List<String> _tabTitles = ["이용약관", "개인정보 처리방침", "리뷰 중단 정책"];
@@ -26,37 +28,50 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen>
   ];
 
   final List<String> _contents = ['', '', ''];
+  final List<List<TextSpan>> _formattedContents = [[], [], []];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+
+    // 탭 수만큼 스크롤 컨트롤러 생성
+    for (int i = 0; i < _tabTitles.length; i++) {
+      _scrollControllers.add(ScrollController()..addListener(() => _scrollListener(i)));
+    }
+
     _tabController = TabController(
         length: _tabTitles.length,
         vsync: this,
         initialIndex: widget.initialIndex
     );
-    _scrollController = ScrollController();
-    _scrollController.addListener(_scrollListener);
+
     _loadContents();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    _scrollController.dispose();
+    // 모든 스크롤 컨트롤러 해제
+    for (var controller in _scrollControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
-  void _scrollListener() {
-    if (_scrollController.offset > 300 && !_showScrollUpButton) {
-      setState(() {
-        _showScrollUpButton = true;
-      });
-    } else if (_scrollController.offset <= 300 && _showScrollUpButton) {
-      setState(() {
-        _showScrollUpButton = false;
-      });
+  // 현재 활성화된 탭의 스크롤 위치에 따라 버튼 표시 여부 결정
+  void _scrollListener(int index) {
+    if (index == _tabController.index) {
+      final controller = _scrollControllers[index];
+      if (controller.offset > 300 && !_showScrollUpButton) {
+        setState(() {
+          _showScrollUpButton = true;
+        });
+      } else if (controller.offset <= 300 && _showScrollUpButton) {
+        setState(() {
+          _showScrollUpButton = false;
+        });
+      }
     }
   }
 
@@ -64,8 +79,13 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen>
     try {
       for (int i = 0; i < _filePaths.length; i++) {
         final String content = await rootBundle.loadString(_filePaths[i]);
+
+        // 미리 포맷팅 처리
+        final List<TextSpan> formatted = _formatTerms(content, i);
+
         setState(() {
           _contents[i] = content;
+          _formattedContents[i] = formatted;
         });
       }
     } catch (e) {
@@ -77,7 +97,20 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen>
     }
   }
 
-  List<TextSpan> _formatTerms(String text) {
+  // 파일 유형에 따라 다른 포맷팅 적용
+  List<TextSpan> _formatTerms(String text, int fileIndex) {
+    // 개인정보처리방침인 경우 (index = 1)
+    if (fileIndex == 1) {
+      return _formatPrivacyPolicy(text);
+    }
+    // 다른 형식의 문서인 경우
+    else {
+      return _formatTraditionalTerms(text);
+    }
+  }
+
+  // 기존 "제X장", "제X조" 형식의 문서 처리
+  List<TextSpan> _formatTraditionalTerms(String text) {
     final List<TextSpan> spans = [];
 
     // 제목 패턴 (제X장, 제X조 등)
@@ -87,7 +120,6 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen>
     final sectionRegex = RegExp(r"^.*제\s*\d+\s*장.*$", multiLine: true);
 
     int lastMatchEnd = 0;
-    bool inSection = false;
 
     // 섹션 제목 먼저 찾기
     final sectionMatches = sectionRegex.allMatches(text);
@@ -130,7 +162,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen>
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
                   height: 2.0,
-                  color: AppTheme.primaryColor,
+                  color: Color(0xFF333333), // 검정색으로 변경
                 ),
               ));
 
@@ -182,6 +214,60 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen>
             fontSize: 15,
             height: 1.5,
             color: Color(0xFF333333)
+        ),
+      ));
+    }
+
+    return spans;
+  }
+
+  // 개인정보처리방침 형식 처리
+  List<TextSpan> _formatPrivacyPolicy(String text) {
+    final List<TextSpan> spans = [];
+
+    // 메인 타이틀 패턴: 줄 시작에 숫자와 점이 있고 그 뒤에 텍스트가 오는 경우
+    final RegExp mainTitleRegex = RegExp(r"^\s*(\d+)\.\s+([^\n]+)", multiLine: true);
+
+    int lastIndex = 0;
+
+    // 메인 타이틀 찾기
+    final Iterable<RegExpMatch> matches = mainTitleRegex.allMatches(text);
+    for (final match in matches) {
+      // 매치 이전 텍스트 추가
+      if (match.start > lastIndex) {
+        spans.add(TextSpan(
+          text: text.substring(lastIndex, match.start),
+          style: const TextStyle(
+            fontSize: 15,
+            height: 1.5,
+            color: Color(0xFF333333),
+          ),
+        ));
+      }
+
+      // 타이틀 전체를 볼드 처리 (검정색으로 변경)
+      final fullTitle = match.group(0)!;
+      spans.add(TextSpan(
+        text: fullTitle,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          height: 1.8,
+          color: Color(0xFF333333), // 검정색으로 변경
+        ),
+      ));
+
+      lastIndex = match.end;
+    }
+
+    // 마지막 매치 이후 텍스트 추가
+    if (lastIndex < text.length) {
+      spans.add(TextSpan(
+        text: text.substring(lastIndex),
+        style: const TextStyle(
+          fontSize: 15,
+          height: 1.5,
+          color: Color(0xFF333333),
         ),
       ));
     }
@@ -254,7 +340,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen>
         ),
       ),
       body: SafeArea(
-          child: _isLoading
+        child: _isLoading
             ? Center(
           child: CircularProgressIndicator(
             color: AppTheme.primaryColor,
@@ -286,7 +372,8 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen>
         Container(
           color: Colors.white,
           child: SingleChildScrollView(
-            controller: _scrollController,
+            // 각 탭마다 별도의 스크롤 컨트롤러 사용
+            controller: _scrollControllers[tabIndex],
             padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,9 +410,10 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen>
                   ),
                 ),
                 SizedBox(height: 16),
+                // 미리 포맷팅된 내용 사용
                 RichText(
                   text: TextSpan(
-                    children: _formatTerms(content),
+                    children: _formattedContents[tabIndex],
                   ),
                 ),
                 // 문서 끝에 여백 추가
@@ -345,9 +433,9 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen>
                 Container(
                   margin: EdgeInsets.only(bottom: 12),
                   child: FloatingActionButton(
-                    heroTag: 'scrollUpButton',
+                    heroTag: 'scrollUpButton${tabIndex}',  // 각 탭마다 고유한 heroTag 사용
                     onPressed: () {
-                      _scrollController.animateTo(
+                      _scrollControllers[tabIndex].animateTo(
                         0,
                         duration: Duration(milliseconds: 300),
                         curve: Curves.easeOut,
@@ -360,7 +448,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen>
                   ),
                 ),
               FloatingActionButton(
-                heroTag: 'copyButton',
+                heroTag: 'copyButton${tabIndex}',  // 각 탭마다 고유한 heroTag 사용
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: content));
                   ScaffoldMessenger.of(context).showSnackBar(

@@ -6,7 +6,6 @@ import '../home_section/review.dart';
 import '../home_section/partner.dart';
 import '../home_section/partner_info.dart';
 import '../home_section/story.dart';
-import '../modal/home_modal/move_type.dart';
 import '../theme/theme_constants.dart';
 import '../api_service.dart';
 import 'notification_screen.dart';
@@ -96,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     // 왼쪽 박스의 전체 높이를 지정합니다.
-    double leftBoxHeight = 270;
+    double leftBoxHeight = 230;
 
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBackground,
@@ -128,30 +127,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // 리뷰 섹션
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  children: [
-                    _buildSectionHeader(
-                        AppCopy.reviewSectionTitle,
-                        AppCopy.viewMoreReviews,
-                            () {
-                          // 모든 리뷰 보기 페이지로 이동
-                        }
-                    ),
-                    const SizedBox(height: 16),
-                    ReviewSlider(
-                      reviews: _reviews,
-                      isLoading: _isLoading,
-                    ),
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
-            ),
-
             // 파트너 섹션
             SliverToBoxAdapter(
               child: Padding(
@@ -168,6 +143,29 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 16),
                     CircleSlider(
                       partners: _partners,
+                      isLoading: _isLoading,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 리뷰 섹션
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  children: [
+                    _buildSectionHeader(
+                        AppCopy.reviewSectionTitle,
+                        AppCopy.viewMoreReviews,
+                            () {
+                          // 모든 리뷰 보기 페이지로 이동
+                        }
+                    ),
+
+                    ReviewSlider(
+                      reviews: _reviews,
                       isLoading: _isLoading,
                     ),
                     const SizedBox(height: 32),
@@ -187,12 +185,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         null,
                         null
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 15),
                     StorySlider(
                       stories: _stories,
                       isLoading: _isLoading,
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
@@ -337,41 +335,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 이사 등록 카드
+// 이사 등록 카드
   Widget _buildMoveRegisterCard(double height, BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (BuildContext context) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom +
-                    MediaQuery.of(context).padding.bottom,
-              ),
-              child: const MovingTypeModal(),
-            );
-          },
-        );
-      },
-      child: LeftBox(height: height),
-    );
+    return LeftBox(height: height);
   }
 
   // 배너 섹션
