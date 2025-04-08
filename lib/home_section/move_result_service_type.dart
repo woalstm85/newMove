@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-//import 'final_review_screen.dart';
+import 'final_review_screen.dart';
 import '../theme/theme_constants.dart';
 import '../providers/move_provider.dart';
 import '../utils/ui_extensions.dart';
 import '../utils/ui_mixins.dart';
-import 'move_result_timeline.dart';
+
 
 class ServiceTypeScreen extends ConsumerStatefulWidget {
   final bool isRegularMove;
@@ -118,31 +118,6 @@ class _ServiceTypeScreenState extends ConsumerState<ServiceTypeScreen> with Move
       {'icon': Icons.local_shipping, 'title': '운송', 'subtitle': '목적지까지 운송'},
       {'icon': Icons.home, 'title': '배치', 'subtitle': '물품 배치 서비스'},
     ];
-  }
-
-// 타임라인 상세 모달 표시 메서드 추가
-  void _showTimelineDetailModal(BuildContext context, Map<String, dynamic> step, int index) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85, // 화면의 90%로 높이 조정
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-        ),
-        child: TimelineDetailModal(
-          serviceType: selectedService!,
-          step: step,
-          index: index,
-          isRegularMove: widget.isRegularMove,
-        ),
-      ),
-    );
   }
 
   // 소형이사(small_move) 서비스 옵션
@@ -746,7 +721,6 @@ class _ServiceTypeScreenState extends ConsumerState<ServiceTypeScreen> with Move
 
           ),
           child: InkWell(
-            onTap: () => _showTimelineDetailModal(context, steps[index], index),
             child: Row(
               children: [
                 // 단계 아이콘
@@ -792,22 +766,6 @@ class _ServiceTypeScreenState extends ConsumerState<ServiceTypeScreen> with Move
                     ],
                   ),
                 ),
-
-                // 상세보기 아이콘
-                Container(
-                  padding: EdgeInsets.all(8), // 패딩 약간 늘림
-                  margin: EdgeInsets.only(left: 8), // 텍스트와의 간격 조정
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border :Border.all(color: AppTheme.borderColor, width: 1)
-                  ),
-                  child: Icon(
-                    Icons.arrow_forward_ios,
-                    size: 12, // 아이콘 크기 약간 줄임
-                    color: widget.isRegularMove ? primaryColor : AppTheme.greenColor,
-                  ),
-                ),
               ],
             ),
           ),
@@ -849,30 +807,3 @@ class _ServiceTypeScreenState extends ConsumerState<ServiceTypeScreen> with Move
 
 } // _ServiceTypeScreenState 클래스 닫기
 
-// 다음 화면 표시용 샘플 위젯
-class FinalReviewScreen extends ConsumerWidget {
-  final bool isRegularMove;
-
-  const FinalReviewScreen({
-    Key? key,
-    required this.isRegularMove,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Riverpod에서 이사 정보 가져오기
-    final moveState = isRegularMove
-        ? ref.watch(regularMoveProvider)
-        : ref.watch(specialMoveProvider);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('견적 리뷰'),
-        centerTitle: true,
-      ),
-      body: Center(
-        child: Text('최종 견적 화면(구현 필요)'),
-      ),
-    );
-  }
-}

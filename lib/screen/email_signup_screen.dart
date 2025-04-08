@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import '../theme/theme_constants.dart';
+import 'package:MoveSmart/theme/theme_constants.dart';
+import 'package:MoveSmart/more_section/terms_service.dart';
+import 'package:MoveSmart/screen/marketing_consent_screen.dart';
+import 'package:MoveSmart/screen/third_party_consent_screen.dart';
 
 class EmailSignUpScreen extends StatefulWidget {
   const EmailSignUpScreen({super.key});
@@ -292,6 +295,7 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
               SizedBox(height: 32),
 
               // 이용약관 동의
+              // 이용약관 동의
               Container(
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -310,7 +314,7 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
                     ),
 
                     Divider(height: 24, thickness: 1),
-
+                    // 이용약관 동의
                     _buildCheckboxItem(
                       title: '이용약관 동의',
                       value: isAgreedTerms,
@@ -322,10 +326,20 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
                       },
                       isRequired: true,
                       showDetail: true,
+                      onTapDetail: () {
+                        // 이용약관 화면으로 이동
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TermsOfServiceScreen(initialIndex: 0),
+                          ),
+                        );
+                      },
                     ),
 
                     SizedBox(height: 16),
 
+                    // 개인정보 수집/이용 동의
                     _buildCheckboxItem(
                       title: '개인정보 수집/이용 동의',
                       value: isAgreedPrivacy,
@@ -337,10 +351,20 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
                       },
                       isRequired: true,
                       showDetail: true,
+                      onTapDetail: () {
+                        // 개인정보 처리방침 화면으로 이동
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TermsOfServiceScreen(initialIndex: 1),
+                          ),
+                        );
+                      },
                     ),
 
                     SizedBox(height: 16),
 
+                    // 만 14세 이상 확인
                     _buildCheckboxItem(
                       title: '만 14세 이상 확인',
                       value: isAbove14,
@@ -355,8 +379,9 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
 
                     SizedBox(height: 16),
 
+                    // 마케팅 활용 동의 부분 수정 (설명 문구 추가)
                     _buildCheckboxItem(
-                      title: '개인정보 수집/이용 동의',
+                      title: '마케팅 활용 동의',
                       value: isAgreedOptionalPrivacy,
                       onChanged: (value) {
                         setState(() {
@@ -366,12 +391,22 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
                       },
                       isRequired: false,
                       showDetail: true,
+                      onTapDetail: () {
+                        // 마케팅 활용 동의 화면으로 이동
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MarketingConsentScreen(),
+                          ),
+                        );
+                      },
                     ),
 
                     SizedBox(height: 16),
 
+                    // 제3자 정보 제공 동의 부분
                     _buildCheckboxItem(
-                      title: '이벤트 및 할인쿠폰 등 혜택/정보 수신',
+                      title: '제3자 정보 제공 동의',
                       value: isAgreedPromotions,
                       onChanged: (value) {
                         setState(() {
@@ -380,6 +415,16 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
                         });
                       },
                       isRequired: false,
+                      showDetail: true,
+                      onTapDetail: () {
+                        // 제3자 정보 제공 동의 화면으로 이동
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ThirdPartyConsentScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -551,45 +596,87 @@ class _EmailSignUpScreenState extends State<EmailSignUpScreen> {
     bool isRequired = false,
     bool isTitle = false,
     bool showDetail = false,
+    String? description, // 설명 문구 추가
+    VoidCallback? onTapDetail, // 상세보기 탭 이벤트 추가
   }) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 체크박스
-        SizedBox(
-          width: 24,
-          height: 24,
-          child: Checkbox(
-            value: value,
-            onChanged: onChanged,
-            activeColor: AppTheme.primaryColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
+        Row(
+          children: [
+            // 체크박스
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: value,
+                onChanged: onChanged,
+                activeColor: AppTheme.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
             ),
-          ),
+
+            SizedBox(width: 12),
+
+            // 텍스트
+            Expanded(
+              child: Text(
+                isRequired ? '[필수] $title' : (isTitle ? title : '[선택] $title'),
+                style: TextStyle(
+                  fontSize: isTitle ? 16 : 14,
+                  fontWeight: isTitle ? FontWeight.bold : FontWeight.normal,
+                  color: isTitle ? AppTheme.primaryText : AppTheme.secondaryText,
+                ),
+              ),
+            ),
+
+            // 상세보기 아이콘
+            if (showDetail)
+              GestureDetector(
+                onTap: onTapDetail,
+                child: Container(
+                  padding: EdgeInsets.all(4),
+                  child: Row(
+                    children: [
+                      Text(
+                        '보기',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.secondaryText,
+                        ),
+                      ),
+                      SizedBox(width: 2),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 12,
+                        color: AppTheme.secondaryText,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
 
-        SizedBox(width: 12),
-
-        // 텍스트
-        Expanded(
-          child: Text(
-            isRequired ? '[필수] $title' : (isTitle ? title : '[선택] $title'),
-            style: TextStyle(
-              fontSize: isTitle ? 16 : 14,
-              fontWeight: isTitle ? FontWeight.bold : FontWeight.normal,
-              color: isTitle ? AppTheme.primaryText : AppTheme.secondaryText,
+        // 설명 문구가 있는 경우 표시
+        if (description != null) ...[
+          SizedBox(height: 6),
+          Padding(
+            padding: EdgeInsets.only(left: 36),
+            child: Text(
+              description,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.subtleText,
+              ),
             ),
           ),
-        ),
-
-        // 상세보기 아이콘
-        if (showDetail)
-          Icon(
-            Icons.arrow_forward_ios,
-            size: 14,
-            color: AppTheme.secondaryText,
-          ),
+        ],
       ],
     );
   }
+
+
 }

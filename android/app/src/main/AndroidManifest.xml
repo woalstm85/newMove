@@ -3,10 +3,18 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
+
     <application
         android:label="MoveSmart"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
+
+        <!-- 네이버 SDK 메타데이터 추가 -->
+        <meta-data android:name="com.naver.sdk.clientId" android:value="@string/client_id" />
+        <meta-data android:name="com.naver.sdk.clientSecret" android:value="@string/client_secret" />
+        <meta-data android:name="com.naver.sdk.clientName" android:value="@string/client_name" />
+
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -16,36 +24,56 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <!-- 네이버 로그인 SDK 활동 추가 -->
+        <activity
+            android:name="com.nhn.android.naverlogin.ui.OAuthLoginActivity"
+            android:screenOrientation="portrait"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity
+            android:name="com.nhn.android.naverlogin.ui.OAuthLoginInAppBrowserActivity"
+            android:configChanges="orientation|screenSize"
+            android:label="OAuth2.0 In-app" />
+
         <meta-data
-            android:name="io.flutter.embedding.android.NormalTheme"
-            android:resource="@style/NormalTheme"
-            />
-        <intent-filter>
-            <action android:name="android.intent.action.MAIN"/>
-            <category android:name="android.intent.category.LAUNCHER"/>
-        </intent-filter>
-    </activity>
-    <meta-data
-        android:name="flutterEmbedding"
-        android:value="2" />
-</application>
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
 
-<queries>
-<intent>
-    <action android:name="android.intent.action.PROCESS_TEXT" />
-    <data android:mimeType="text/plain" />
-</intent>
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT" />
+            <data android:mimeType="text/plain" />
+        </intent>
 
-<intent>
-    <action android:name="android.intent.action.VIEW" />
-    <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="http" />
-</intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="http" />
+        </intent>
 
-<intent>
-    <action android:name="android.intent.action.VIEW" />
-    <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="https" />
-</intent>
-</queries>
-    </manifest>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+
+        <!-- 네이버 로그인 앱 URL 스킴 쿼리 -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="nid-trQDT37uekxM1SE8xvz5" android:host="authorize" />
+        </intent>
+
+        <package android:name="com.nhn.android.search" />
+        <package android:name="com.naver.nid.login" />
+    </queries>
+</manifest>

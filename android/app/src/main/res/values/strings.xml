@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 네이버 로그인 SDK 설정 -->
+    <string name="client_id">trQDT37uekxM1SE8xvz5</string>
+    <string name="client_secret">Bw0v6a9nLf</string>
+    <string name="client_name">movesmart</string>
+</resources>

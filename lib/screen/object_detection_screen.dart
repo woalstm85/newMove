@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:image_picker/image_picker.dart';
 import '../theme/theme_constants.dart';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis/vision/v1.dart' as vision;
 import 'package:flutter/services.dart' show rootBundle;
+
+enum ScreenState { camera, processing, result }
 
 class ObjectDetectionScreen extends StatefulWidget {
   const ObjectDetectionScreen({Key? key}) : super(key: key);
@@ -23,6 +23,10 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
   CameraController? cameraController;
   bool isCameraInitialized = false;
   bool isProcessing = false;
+
+  // 화면 상태 관리 변수들
+  ScreenState currentScreen = ScreenState.camera;
+  XFile? capturedImage; // 촬영된 이미지 저장
 
   // 이사 관련 가구 및 가전제품 목록 (영어 -> 한글 매핑)
   final Map<String, String> moveItemsMap = {
@@ -138,30 +142,26 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
     }
   }
 
-  Future<void> _captureAndDetect() async {
+  Future<void> _captureAndAnalyze() async {
     if (cameraController != null && cameraController!.value.isInitialized) {
       try {
-        // UI 업데이트를 위해 처리 중임을 표시
-        setState(() {
-          isProcessing = true;
-        });
-
         // 사진 촬영
         final XFile photo = await cameraController!.takePicture();
-        final File imageFile = File(photo.path);
+        capturedImage = photo;
 
-        // Google Cloud Vision API로 이미지 분석 (서비스 계정 사용)
-        await analyzeImageWithServiceAccount(imageFile);
+        // 이미지 분석
+        await analyzeImageWithServiceAccount(File(photo.path));
 
+        // 결과 화면으로 전환
+        setState(() {
+          currentScreen = ScreenState.result;
+        });
       } catch (e) {
         print('Image capture error: $e');
         _showErrorSnackBar('이미지 촬영 중 오류가 발생했습니다.');
-      } finally {
-        if (mounted) {
-          setState(() {
-            isProcessing = false;
-          });
-        }
+        setState(() {
+          currentScreen = ScreenState.camera;
+        });
       }
     }
   }
@@ -173,14 +173,23 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
     if (image != null) {
       setState(() {
         isProcessing = true;
+        currentScreen = ScreenState.processing;
+        capturedImage = image;
       });
 
       try {
         final File imageFile = File(image.path);
         await analyzeImageWithServiceAccount(imageFile);
+
+        setState(() {
+          currentScreen = ScreenState.result;
+        });
       } catch (e) {
         print('Gallery image processing error: $e');
         _showErrorSnackBar('갤러리 이미지 처리 중 오류가 발생했습니다.');
+        setState(() {
+          currentScreen = ScreenState.camera;
+        });
       } finally {
         if (mounted) {
           setState(() {
@@ -201,11 +210,23 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
     );
   }
 
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<void> analyzeImageWithServiceAccount(File imageFile) async {
     try {
       // 서비스 계정 자격 증명 로드
-      final serviceAccountJson = await rootBundle.loadString('assets/service_account_key.json');
-      final credentials = ServiceAccountCredentials.fromJson(jsonDecode(serviceAccountJson));
+      final serviceAccountJson = await rootBundle.loadString(
+          'assets/service_account_key.json');
+      final credentials = ServiceAccountCredentials.fromJson(
+          jsonDecode(serviceAccountJson));
 
       // 인증된 HTTP 클라이언트 가져오기
       final scopes = [vision.VisionApi.cloudVisionScope];
@@ -229,7 +250,8 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
         ..maxResults = 20;
 
       // 이미지 소스 생성
-      final image = vision.Image()..content = base64Image;
+      final image = vision.Image()
+        ..content = base64Image;
 
       // 주석 요청 생성
       final request = vision.AnnotateImageRequest()
@@ -237,7 +259,8 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
         ..image = image;
 
       // 배치 요청 실행
-      final batchRequest = vision.BatchAnnotateImagesRequest()..requests = [request];
+      final batchRequest = vision.BatchAnnotateImagesRequest()
+        ..requests = [request];
       final response = await visionApi.images.annotate(batchRequest);
 
       // 결과 처리
@@ -249,41 +272,44 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
 
         // 객체 인식 결과 처리
         if (annotateImageResponse.localizedObjectAnnotations != null) {
-          for (var object in annotateImageResponse.localizedObjectAnnotations!) {
+          for (var object in annotateImageResponse
+              .localizedObjectAnnotations!) {
             final String name = object.name ?? '';
             final double confidence = (object.score ?? 0) * 100;
 
             // 이사 관련 물품인지 확인
-            String koreanName = moveItemsMap[name.toLowerCase()] ?? name;
-
-            // 중복 항목 확인
-            bool isDuplicate = false;
-            for (var item in detectedItems) {
-              if (item.label == koreanName) {
-                isDuplicate = true;
-                if (item.confidence < confidence) {
-                  item.confidence = confidence;
+            String? koreanName = moveItemsMap[name.toLowerCase()];
+            if (koreanName != null) {
+              // 중복 항목 확인
+              bool isDuplicate = false;
+              for (var item in detectedItems) {
+                if (item.label == koreanName) {
+                  isDuplicate = true;
+                  if (item.confidence < confidence) {
+                    item.confidence = confidence;
+                  }
+                  break;
                 }
-                break;
               }
-            }
 
-            if (!isDuplicate && confidence > 60) {
-              // 바운딩 박스 파싱
-              Rect boundingBox = _parseBoundingBoxFromApi(object.boundingPoly);
+              if (!isDuplicate && confidence > 60) {
+                // 바운딩 박스 파싱
+                Rect boundingBox = _parseBoundingBoxFromApi(
+                    object.boundingPoly);
 
-              detectedItems.add(RecognizedItem(
-                label: koreanName,
-                englishLabel: name,
-                confidence: confidence,
-                boundingBox: boundingBox,
-                timestamp: DateTime.now(),
-              ));
+                detectedItems.add(RecognizedItem(
+                  label: koreanName,
+                  englishLabel: name,
+                  confidence: confidence,
+                  boundingBox: boundingBox,
+                  timestamp: DateTime.now(),
+                ));
+              }
             }
           }
         }
 
-        // 라벨 감지 결과 처리
+        // 라벨 감지 결과 처리 (물체 인식에서 놓친 항목을 위해)
         if (annotateImageResponse.labelAnnotations != null) {
           for (var label in annotateImageResponse.labelAnnotations!) {
             final String name = label.description ?? '';
@@ -306,7 +332,8 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
                   label: koreanName,
                   englishLabel: name,
                   confidence: confidence,
-                  boundingBox: null, // Label Detection은 위치 정보가 없음
+                  boundingBox: null,
+                  // Label Detection은 위치 정보가 없음
                   timestamp: DateTime.now(),
                 ));
               }
@@ -347,38 +374,27 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
       httpClient.close();
     } catch (e) {
       print('이미지 분석 오류: $e');
-      _showErrorSnackBar('이미지 분석 중 오류가 발생했습니다. 상세: $e');
+      _showErrorSnackBar('이미지 분석 중 오류가 발생했습니다.');
+      rethrow;
     }
   }
 
   Rect _parseBoundingBoxFromApi(vision.BoundingPoly? boundingPoly) {
     // 바운딩 박스가 없는 경우 기본값 반환
-    if (boundingPoly == null || boundingPoly.normalizedVertices == null || boundingPoly.normalizedVertices!.isEmpty) {
-      return Rect.fromLTRB(0, 0, 1, 1);
+    if (boundingPoly == null || boundingPoly.normalizedVertices == null ||
+        boundingPoly.normalizedVertices!.isEmpty) {
+      return Rect.fromLTRB(0.1, 0.1, 0.9, 0.9); // 테스트용 기본값 (화면의 90% 크기)
     }
 
-    double minX = 1.0, minY = 1.0, maxX = 0.0, maxY = 0.0;
+    double minX = 1.0,
+        minY = 1.0,
+        maxX = 0.0,
+        maxY = 0.0;
 
     for (var vertex in boundingPoly.normalizedVertices!) {
       double x = vertex.x ?? 0.0;
       double y = vertex.y ?? 0.0;
 
-      minX = minX > x ? x : minX;
-      minY = minY > y ? y : minY;
-      maxX = maxX < x ? x : maxX;
-      maxY = maxY < y ? y : maxY;
-    }
-
-    return Rect.fromLTRB(minX, minY, maxX, maxY);
-  }
-
-  Rect _parseBoundingBox(Map<String, dynamic> boundingPoly) {
-    final vertices = boundingPoly['normalizedVertices'] as List;
-
-    double minX = 1.0, minY = 1.0, maxX = 0.0, maxY = 0.0;
-    for (var vertex in vertices) {
-      double x = vertex['x'] ?? 0.0;
-      double y = vertex['y'] ?? 0.0;
       minX = minX > x ? x : minX;
       minY = minY > y ? y : minY;
       maxX = maxX < x ? x : maxX;
@@ -404,433 +420,453 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
 
   // 날짜 포맷 변환
   String _formatTime(DateTime time) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:${time.second.toString().padLeft(2, '0')}';
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString()
+        .padLeft(2, '0')}:${time.second.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    // SafeArea를 사용하여 하단 네비게이션 바와 겹치지 않도록 함
-    return Scaffold(
-      backgroundColor: AppTheme.scaffoldBackground,
-      appBar: AppBar(
-        title: const Text(
-          '사물 인식',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppTheme.primaryText,
+    return WillPopScope(
+      onWillPop: () async {
+        // 결과 화면 또는 처리 화면일 경우, 카메라 화면으로 돌아가기
+        if (currentScreen == ScreenState.result || currentScreen == ScreenState.processing) {
+          setState(() {
+            currentScreen = ScreenState.camera;
+          });
+          return false; // 뒤로가기 이벤트 처리 완료 (네비게이션 스택에서 pop하지 않음)
+        }
+        // 카메라 화면인 경우 정상적으로 뒤로가기 (홈으로 돌아감)
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('사물 인식', style: TextStyle(fontWeight: FontWeight.bold)),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              // 결과 화면 또는 처리 화면일 경우, 카메라 화면으로 돌아가기
+              if (currentScreen == ScreenState.result || currentScreen == ScreenState.processing) {
+                setState(() {
+                  currentScreen = ScreenState.camera;
+                });
+              } else {
+                // 카메라 화면에서는 홈으로 돌아가기
+                Navigator.of(context).pop();
+              }
+            },
           ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.primaryText),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          // 인식된 물체 기록 버튼
-          IconButton(
-            icon: Icon(
-              showHistoryPanel ? Icons.history_toggle_off : Icons.history,
-              color: AppTheme.primaryColor,
-            ),
-            onPressed: _toggleHistoryPanel,
-          ),
-          // 갤러리에서 이미지 선택 버튼
-          IconButton(
-            icon: Icon(
-              Icons.photo_library,
-              color: AppTheme.primaryColor,
-            ),
-            onPressed: _pickImageFromGallery,
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: isCameraInitialized
-            ? Stack(
-          children: [
-            // 카메라 미리보기
-            Positioned.fill(
-              child: AspectRatio(
-                aspectRatio: cameraController!.value.aspectRatio,
-                child: CameraPreview(cameraController!),
-              ),
-            ),
-
-            // 인식된 물체 표시 오버레이
-            if (currentDetectedItems.isNotEmpty)
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: ObjectDetectionPainter(
-                    currentDetectedItems,
-                    Size(
-                      MediaQuery.of(context).size.width,
-                      MediaQuery.of(context).size.width / cameraController!.value.aspectRatio,
-                    ),
-                  ),
-                ),
-              ),
-
-            // 하단 컨트롤 패널
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 현재 인식된 물체 정보 표시
-                    if (currentDetectedItems.isNotEmpty)
-                      Container(
-                        margin: EdgeInsets.only(bottom: 16),
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '인식된 물건',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryColor,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: _buildDetectedItemChips(),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                    // 사진 촬영 안내
-                    if (currentDetectedItems.isEmpty)
-                      Container(
-                        margin: EdgeInsets.only(bottom: 16),
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.warning.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: AppTheme.warning.withOpacity(0.3),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              color: AppTheme.warning,
-                              size: 20,
-                            ),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '인식하려는 물건이 화면에 보이도록 위치시키고 촬영 버튼을 눌러주세요.',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppTheme.secondaryText,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                    // 컨트롤 버튼들
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        // 가이드 텍스트
-                        Expanded(
-                          child: Text(
-                            '이사할 물건을 인식하여 목록을 만들어보세요',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.secondaryText,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-
-                        SizedBox(width: 20),
-
-                        // 사진 촬영 버튼
-                        GestureDetector(
-                          onTap: isProcessing ? null : _captureAndDetect,
-                          child: Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white,
-                              border: Border.all(
-                                color: isProcessing ? AppTheme.subtleText : AppTheme.primaryColor,
-                                width: 3,
-                              ),
-                            ),
-                            child: Center(
-                              child: Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: isProcessing ? AppTheme.subtleText : AppTheme.primaryColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // 로딩 인디케이터
-            if (isProcessing)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black45,
-                  child: Center(
-                    child: Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            '물건 인식 중...',
-                            style: TextStyle(
-                              color: AppTheme.primaryText,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-            // 인식 기록 패널
-            if (showHistoryPanel)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 150, // 하단 컨트롤 패널 위까지만
-                child: Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(20),
-                      bottomRight: Radius.circular(20),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 패널 헤더
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '인식된 물건 목록',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryText,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              // 기록 삭제 버튼
-                              IconButton(
-                                icon: Icon(
-                                  Icons.delete_outline,
-                                  color: AppTheme.error,
-                                ),
-                                onPressed: historyItems.isEmpty ? null : _clearRecognizedItems,
-                              ),
-                              // 패널 닫기 버튼
-                              IconButton(
-                                icon: Icon(
-                                  Icons.close,
-                                  color: AppTheme.secondaryText,
-                                ),
-                                onPressed: _toggleHistoryPanel,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-
-                      // 구분선
-                      Divider(height: 16, thickness: 1),
-
-                      // 인식된 물건 목록
-                      Expanded(
-                        child: historyItems.isEmpty
-                            ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.search_off,
-                                size: 48,
-                                color: AppTheme.subtleText,
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                '아직 인식된 물건이 없습니다',
-                                style: TextStyle(
-                                  color: AppTheme.subtleText,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                '카메라로 물건을 촬영해 보세요',
-                                style: TextStyle(
-                                  color: AppTheme.subtleText,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                            : ListView.separated(
-                          itemCount: historyItems.length,
-                          separatorBuilder: (context, index) => Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            final item = historyItems[historyItems.length - 1 - index];
-                            return ListTile(
-                              leading: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    _getIconForItem(item.label),
-                                    color: AppTheme.primaryColor,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                              title: Text(
-                                item.label,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.primaryText,
-                                ),
-                              ),
-                              subtitle: Text(
-                                '정확도: ${item.confidence.toStringAsFixed(1)}%',
-                                style: TextStyle(
-                                  color: AppTheme.secondaryText,
-                                ),
-                              ),
-                              trailing: Text(
-                                _formatTime(item.timestamp),
-                                style: TextStyle(
-                                  color: AppTheme.subtleText,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+          actions: [
+            if (currentScreen == ScreenState.result)
+              IconButton(
+                icon: Icon(Icons.history),
+                onPressed: _toggleHistoryPanel,
+                tooltip: '인식 기록',
               ),
           ],
-        )
-            : Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-          ),
+        ),
+        body: SafeArea(
+          child: currentScreen == ScreenState.camera
+              ? _buildCameraScreen()
+              : currentScreen == ScreenState.processing
+              ? _buildLoadingScreen()
+              : _buildResultScreen(),
         ),
       ),
     );
   }
 
-  // 인식된 물체들에 대한 칩 위젯 생성
-  List<Widget> _buildDetectedItemChips() {
-    return currentDetectedItems.map((item) {
-      return Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: AppTheme.primaryColor.withOpacity(0.3),
-            width: 1,
+  Widget _buildLoadingScreen() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+          SizedBox(height: 16),
+          Text(
+            '물건 인식 중...',
+            style: TextStyle(
+              color: AppTheme.primaryText,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultScreen() {
+    if (capturedImage == null || currentDetectedItems.isEmpty) {
+      // 결과가 없는 경우 처리
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(_getIconForItem(item.label), size: 16, color: AppTheme.primaryColor),
-            SizedBox(width: 6),
-            Text(
-              '${item.label} ${item.confidence.toStringAsFixed(0)}%',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor,
+            Icon(Icons.error_outline, size: 64, color: AppTheme.subtleText),
+            SizedBox(height: 16),
+            Text('인식 결과가 없습니다.', style: TextStyle(fontSize: 18)),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  currentScreen = ScreenState.camera;
+                });
+              },
+              child: Text('다시 촬영하기'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
               ),
             ),
           ],
         ),
       );
-    }).toList();
+    }
+
+    return Stack(
+      children: [
+        // 기본 결과 화면 (기존 LayoutBuilder 부분)
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // 하단 정보창 높이 조정 (더 작게)
+            final double infoBarHeight = constraints.maxHeight * 0.25;
+
+            // 사용 가능한 이미지 영역 계산
+            final double availableImageHeight = constraints.maxHeight - infoBarHeight;
+
+            return Column(
+              children: [
+                // 이미지 및 바운딩 박스가 표시될 영역
+                Container(
+                  height: availableImageHeight,
+                  width: constraints.maxWidth,
+                  color: Colors.black,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // 이미지 표시
+                      Center(
+                        child: Image.file(
+                          File(capturedImage!.path),
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+
+                      // 바운딩 박스 오버레이
+                      LayoutBuilder(
+                        builder: (context, innerConstraints) {
+                          return CustomPaint(
+                            painter: ObjectDetectionPainter(
+                              currentDetectedItems,
+                              innerConstraints.biggest,
+                            ),
+                            size: innerConstraints.biggest,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 인식된 물체 정보 (하단 영역)
+                Expanded( // Expanded로 변경하여 사용 가능한 공간에 맞추도록 함
+                  child: Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 4,
+                          offset: Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '인식된 물건',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                            Text(
+                              '${currentDetectedItems.length}개 발견',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.subtleText,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
+                        Expanded( // 목록이 스크롤되도록 Expanded 적용
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: _buildDetectedItemChips(),
+                          ),
+                        ),
+                        SizedBox(height: 12), // 간격 줄임
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  currentScreen = ScreenState.camera;
+                                });
+                              },
+                              icon: Icon(Icons.refresh, color: AppTheme.primaryColor),
+                              label: Text('다시 촬영'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.primaryColor,
+                                side: BorderSide(color: AppTheme.primaryColor),
+                              ),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                // 물품 목록에 추가하는 로직
+                                _showSuccessSnackBar('물품 목록에 추가되었습니다.');
+                              },
+                              icon: Icon(Icons.add, color: Colors.white),
+                              label: Text('목록에 추가'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+
+        // 히스토리 패널 (showHistoryPanel이 true일 때만 표시)
+        if (showHistoryPanel)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.5),
+              child: Center(
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '인식 기록',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.close),
+                            onPressed: _toggleHistoryPanel,
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+
+                      // 히스토리 목록이 비어 있는 경우
+                      if (historyItems.isEmpty)
+                        Expanded(
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.history, size: 48, color: Colors.grey[300]),
+                                SizedBox(height: 16),
+                                Text(
+                                  '인식 기록이 없습니다',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                      // 히스토리 목록 표시
+                        Expanded(
+                          child: ListView.separated(
+                            itemCount: historyItems.length,
+                            separatorBuilder: (context, index) => Divider(),
+                            itemBuilder: (context, index) {
+                              final item = historyItems[index];
+                              return ListTile(
+                                leading: Icon(_getIconForItem(item.label), color: AppTheme.primaryColor),
+                                title: Text(item.label),
+                                subtitle: Text('신뢰도: ${item.confidence.toStringAsFixed(0)}%'),
+                                trailing: Text(
+                                  _formatTime(item.timestamp),
+                                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+
+                      SizedBox(height: 16),
+
+                      // 기록 삭제 버튼
+                      if (historyItems.isNotEmpty)
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            _clearRecognizedItems();
+                            _showSuccessSnackBar('인식 기록이 삭제되었습니다.');
+                          },
+                          icon: Icon(Icons.delete_outline, color: Colors.red),
+                          label: Text('기록 삭제'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: BorderSide(color: Colors.red),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
-  // 아이템에 따른 아이콘 선택
+  Widget _buildCameraScreen() {
+    if (!isCameraInitialized) {
+      return Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+    }
+
+    return Stack(
+      children: [
+        // 카메라 프리뷰
+        Positioned.fill(
+          child: AspectRatio(
+            aspectRatio: cameraController!.value.aspectRatio,
+            child: CameraPreview(cameraController!),
+          ),
+        ),
+
+        // 가이드 텍스트
+        Positioned(
+          top: 20,
+          left: 20,
+          right: 20,
+          child: Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '인식하려는 물건이 화면 중앙에 오도록 위치시키고 촬영 버튼을 눌러주세요.',
+              style: TextStyle(color: Colors.white, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+
+        // 촬영 및 갤러리 버튼
+        Positioned(
+          bottom: 30,
+          left: 0,
+          right: 0,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 갤러리 버튼 (왼쪽)
+              Padding(
+                padding: EdgeInsets.only(right: 40),
+                child: GestureDetector(
+                  onTap: _pickImageFromGallery,
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      border: Border.all(color: AppTheme.primaryColor, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.photo_library,
+                      color: AppTheme.primaryColor,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
+
+              // 촬영 버튼 (중앙)
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    currentScreen = ScreenState.processing;
+                  });
+                  _captureAndAnalyze();
+                },
+                child: Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                    border: Border.all(color: AppTheme.primaryColor, width: 4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+
+// 아이템에 따른 아이콘 선택
   IconData _getIconForItem(String label) {
     switch (label) {
       case '의자':
@@ -912,21 +948,44 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
         return Icons.piano;
       case '베개':
         return Icons.airline_seat_individual_suite;
-      case '이불':
-      case '커튼':
-      case '블라인드':
-      case '러그':
-      case '카펫':
-      case '스툴':
-      case '벤치':
-      case '오토만':
-        return Icons.chair_alt;
       default:
         return Icons.category;
     }
   }
-}
 
+// 인식된 물체들에 대한 칩 위젯 생성
+  List<Widget> _buildDetectedItemChips() {
+    return currentDetectedItems.map((item) {
+      return Container(
+        margin: EdgeInsets.only(right: 10),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: AppTheme.primaryColor.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(_getIconForItem(item.label), size: 16, color: AppTheme.primaryColor),
+            SizedBox(width: 6),
+            Text(
+              '${item.label} ${item.confidence.toStringAsFixed(0)}%',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
+  }
+}
 // 인식된 물체 클래스
 class RecognizedItem {
   final String label;
@@ -947,27 +1006,44 @@ class RecognizedItem {
 // 감지된 물체 그리기 위한 CustomPainter
 class ObjectDetectionPainter extends CustomPainter {
   final List<RecognizedItem> items;
-  final Size absoluteImageSize;
+  final Size displaySize;
 
-  ObjectDetectionPainter(this.items, this.absoluteImageSize);
+  ObjectDetectionPainter(this.items, this.displaySize);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double scaleX = size.width / absoluteImageSize.width;
-    final double scaleY = size.height / absoluteImageSize.height;
+    if (items.isEmpty) return;
 
-    final Paint boxPaint = Paint()
-      ..color = AppTheme.primaryColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
+    // 각 사물별로 다른 색상을 사용하기 위한 색상 리스트
+    final List<Color> boxColors = [
+      Color(0xFF76FF03),  // 연두색 (기본)
+      Color(0xFF2196F3),  // 파란색
+      Color(0xFFFF9800),  // 주황색
+      Color(0xFFE91E63),  // 핑크색
+      Color(0xFF9C27B0),  // 보라색
+      Color(0xFF00BCD4),  // 청록색
+      Color(0xFFFFEB3B),  // 노란색
+      Color(0xFF795548),  // 갈색
+    ];
 
-    for (final RecognizedItem item in items) {
+    for (int i = 0; i < items.length; i++) {
+      final RecognizedItem item = items[i];
       if (item.boundingBox != null) {
+        // 각 사물마다 다른 색상 사용 (인덱스에 따라 순환)
+        final Color boxColor = boxColors[i % boxColors.length];
+
+        // 바운딩 박스 Paint 설정
+        final Paint boxPaint = Paint()
+          ..color = boxColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.0;
+
+        // 원본 이미지에서의 상대적 좌표 (0~1 범위)를 화면 좌표로 변환
         final Rect scaledRect = Rect.fromLTRB(
-          item.boundingBox!.left * scaleX,
-          item.boundingBox!.top * scaleY,
-          item.boundingBox!.right * scaleX,
-          item.boundingBox!.bottom * scaleY,
+          item.boundingBox!.left * displaySize.width,
+          item.boundingBox!.top * displaySize.height,
+          item.boundingBox!.right * displaySize.width,
+          item.boundingBox!.bottom * displaySize.height,
         );
 
         // 경계 상자 그리기
@@ -980,7 +1056,13 @@ class ObjectDetectionPainter extends CustomPainter {
             color: Colors.white,
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            backgroundColor: AppTheme.primaryColor,
+            shadows: [
+              Shadow(
+                offset: Offset(1.0, 1.0),
+                blurRadius: 3.0,
+                color: Colors.black.withOpacity(0.7),
+              ),
+            ],
           ),
         );
 
@@ -992,24 +1074,44 @@ class ObjectDetectionPainter extends CustomPainter {
 
         textPainter.layout();
 
-        // 라벨 배경 그리기
-        Paint backgroundPaint = Paint()..color = AppTheme.primaryColor;
+        // 라벨 배경 그리기 (박스와 같은 색상의 반투명 배경)
+        Paint backgroundPaint = Paint()..color = boxColor.withOpacity(0.7);
         Rect backgroundRect = Rect.fromLTWH(
-          scaledRect.left - 1,
+          scaledRect.left,
           scaledRect.top - textPainter.height - 2,
           textPainter.width + 8,
           textPainter.height + 4,
         );
-        canvas.drawRect(backgroundRect, backgroundPaint);
 
-        // 라벨 텍스트 그리기
-        textPainter.paint(
-          canvas,
-          Offset(
-            scaledRect.left + 4,
-            scaledRect.top - textPainter.height,
-          ),
-        );
+        // 텍스트가 화면 상단을 벗어나지 않도록 조정
+        if (backgroundRect.top < 0) {
+          backgroundRect = Rect.fromLTWH(
+            scaledRect.left,
+            scaledRect.bottom + 2,
+            textPainter.width + 8,
+            textPainter.height + 4,
+          );
+
+          // 텍스트 그리기 (하단에)
+          canvas.drawRect(backgroundRect, backgroundPaint);
+          textPainter.paint(
+            canvas,
+            Offset(
+              scaledRect.left + 4,
+              scaledRect.bottom + 4,
+            ),
+          );
+        } else {
+          // 텍스트 그리기 (상단에)
+          canvas.drawRect(backgroundRect, backgroundPaint);
+          textPainter.paint(
+            canvas,
+            Offset(
+              scaledRect.left + 4,
+              scaledRect.top - textPainter.height - 2,
+            ),
+          );
+        }
       }
     }
   }

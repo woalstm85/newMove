@@ -3,8 +3,9 @@ class BaggageItem {
   final String loadCd;      // 아이템 코드 (예: L10010)
   final String category;    // 카테고리 이름 (예: 침실/거실가구)
   final String itemName;    // 아이템 이름 (예: 침대)
-  final dynamic subData;    // 아이템 데이터 (아이콘, subData 등) - Map이나 List 둘 다 허용
+  final dynamic subData;    // 아이템 데이터 (subData 등)
   Map<String, String> options;  // 선택된 옵션들 (종류, 크기 등)
+  String? iconPath;         // 아이콘 경로 (예: http://erp.stst.co.kr/upload/LOAD/202503170001.png)
 
   BaggageItem({
     required this.cateId,
@@ -13,6 +14,7 @@ class BaggageItem {
     required this.itemName,
     required this.subData,
     this.options = const {},
+    this.iconPath,          // API에서 직접 받아온 iconPath
   });
 
   // JSON 직렬화/역직렬화 메서드
@@ -24,6 +26,7 @@ class BaggageItem {
       'itemName': itemName,
       'subData': subData,
       'options': options,
+      'iconPath': iconPath,  // JSON에 iconPath 추가
     };
   }
 
@@ -35,6 +38,7 @@ class BaggageItem {
       itemName: json['itemName'],
       subData: json['subData'],
       options: Map<String, String>.from(json['options'] ?? {}),
+      iconPath: json['iconPath'],  // JSON에서 iconPath 읽기
     );
   }
 

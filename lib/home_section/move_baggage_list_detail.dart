@@ -1,17 +1,20 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import '../theme/theme_constants.dart';
-import '../modal/home_modal/move_baggage_detail.dart';
-import './models/baggage_item.dart';
+import 'package:MoveSmart/providers/move_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:MoveSmart/utils/ui_extensions.dart';
+import 'package:MoveSmart/theme/theme_constants.dart';
+import 'package:MoveSmart/modal/home_modal/move_baggage_detail.dart';
+import 'package:MoveSmart/home_section/models/baggage_item.dart';
 import 'move_baggage_photo_view.dart';
-import '../utils/ui_extensions.dart';
+import 'move_result_service_type.dart';
 
 
-class BaggageDetailScreen extends StatefulWidget {
-  final Map<String, List<BaggageItem>> selectedItemsMap; // 새로운 데이터 구조
+class BaggageDetailScreen extends ConsumerStatefulWidget {
+  final Map<String, List<BaggageItem>> selectedItemsMap;
   final bool isRegularMove;
 
   const BaggageDetailScreen({
@@ -21,10 +24,10 @@ class BaggageDetailScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _BaggageDetailScreenState createState() => _BaggageDetailScreenState();
+  ConsumerState<BaggageDetailScreen> createState() => _BaggageDetailScreenState();
 }
 
-class _BaggageDetailScreenState extends State<BaggageDetailScreen> {
+class _BaggageDetailScreenState extends ConsumerState<BaggageDetailScreen> {
   final ImagePicker _picker = ImagePicker();
   List<XFile> photos = [];
   final PageController _pageController = PageController();
@@ -122,7 +125,15 @@ class _BaggageDetailScreenState extends State<BaggageDetailScreen> {
     // 사진 경로 저장
     List<String> photoPaths = photos.map((photo) => photo.path).toList();
     await prefs.setStringList('${_keyPrefix}photoPaths', photoPaths);
+
+    // Provider에도 사진 경로 저장 (추가)
+    final moveProvider = widget.isRegularMove
+        ? ref.read(regularMoveProvider.notifier)
+        : ref.read(specialMoveProvider.notifier);
+
+    moveProvider.setAttachedPhotos(photoPaths);
   }
+
 
   Future<void> _loadState() async {
     final prefs = await SharedPreferences.getInstance();
@@ -721,599 +732,6 @@ class _BaggageDetailScreenState extends State<BaggageDetailScreen> {
     );
   }
 
-// 간결한 전문가 팁 섹션
-  Widget _buildCompactExpertTips() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.lightbulb_outline,
-                    color: _primaryColor,
-                    size: 20,
-                  ),
-                  SizedBox(width: 10),
-                  Text(
-                    '이사 전문가 조언',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryText,
-                    ),
-                  ),
-                ],
-              ),
-              InkWell(
-                onTap: () {
-                  _showDetailedTipsDialog();
-                },
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.lightbulb,
-                        color: _primaryColor,
-                        size: 16,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        '모든 팁 보기',
-                        style: TextStyle(
-                          color: _primaryColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-
-          // 4가지 주요 팁 카테고리를 아이콘과 제목만 표시
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildTipCategory(
-                icon: Icons.savings,
-                title: '비용 절약',
-                color: Colors.green,
-                onTap: () => _showSingleCategoryTipsDialog('비용 절약 팁', Icons.savings, Colors.green),
-              ),
-              _buildTipCategory(
-                icon: Icons.event_note,
-                title: '일정 관리',
-                color: _primaryColor,
-                onTap: () => _showSingleCategoryTipsDialog('일정 관리 팁', Icons.event_note, _primaryColor),
-              ),
-              _buildTipCategory(
-                icon: Icons.all_inbox,
-                title: '포장 꿀팁',
-                color: Colors.orange,
-                onTap: () => _showSingleCategoryTipsDialog('포장 꿀팁', Icons.all_inbox, Colors.orange),
-              ),
-              _buildTipCategory(
-                icon: Icons.warning_amber,
-                title: '확인사항',
-                color: Colors.red,
-                onTap: () => _showSingleCategoryTipsDialog('꼭 확인하세요!', Icons.warning_amber, Colors.red),
-              ),
-            ],
-          ),
-
-          SizedBox(height: 16),
-
-          // 간략한 통계 정보
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: _primaryColor.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.emoji_events,
-                  color: _primaryColor,
-                  size: 18,
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '정확한 정보를 입력한 고객 ',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.secondaryText,
-                          ),
-                        ),
-                        TextSpan(
-                          text: '95%',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: _primaryColor,
-                          ),
-                        ),
-                        TextSpan(
-                          text: '가 긍정적 평가를 받았습니다.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.secondaryText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-// 팁 카테고리 아이콘 위젯
-  Widget _buildTipCategory({
-    required IconData icon,
-    required String title,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
-          ),
-          SizedBox(height: 6),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: AppTheme.secondaryText,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-// 모든 팁을 보여주는 다이얼로그
-  void _showDetailedTipsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        insetPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.9,
-          constraints: BoxConstraints(
-            maxWidth: 500,
-            maxHeight: MediaQuery.of(context).size.height * 0.8,
-          ),
-          child: Column(
-            children: [
-              // 헤더
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.lightbulb,
-                          color: _primaryColor,
-                          size: 24,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          '이사 전문가 조언',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryText,
-                          ),
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.close, color: AppTheme.secondaryText),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
-
-              Divider(height: 1),
-
-              // 내용 (스크롤 가능)
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 비용 절약 팁
-                      _buildTipSection(
-                        title: '비용 절약 팁',
-                        tips: [
-                          '가구 규격을 정확히 입력하세요. 크기를 실제보다 작게 입력하면 추가 비용이 발생할 수 있습니다.',
-                          '사전에 버릴 물건을 정리해 불필요한 운반을 줄이세요.',
-                          '운반이 어려운 특수 물품은 미리 알려주세요. 준비가 필요한 경우가 있습니다.',
-                          '이사 성수기(봄, 가을)를 피하면 비용이 절감될 수 있습니다.',
-                          '포장 서비스가 필요한 물품을 명확히 구분해두세요.',
-                        ],
-                        icon: Icons.savings,
-                        color: Colors.green,
-                      ),
-
-                      SizedBox(height: 20),
-
-                      // 일정 관리 팁
-                      _buildTipSection(
-                        title: '일정 관리 팁',
-                        tips: [
-                          '최소 이사 2주 전에 파트너를 예약하세요. 특히 월말, 월초는 빨리 예약이 찹니다.',
-                          '입주 청소는 이사 전날까지 완료하는 것이 좋습니다.',
-                          '중요 물품(귀중품, 필수 생활용품)은 직접 운반할 계획을 세우세요.',
-                          '이사 당일 날씨를 확인하고 우천 시 대비책을 마련해두세요.',
-                          '새 집의 주차 공간과 엘리베이터 사용 규정을 미리 확인하세요.',
-                        ],
-                        icon: Icons.event_note,
-                        color: _primaryColor,
-                      ),
-
-                      SizedBox(height: 20),
-
-                      // 포장 꿀팁
-                      _buildTipSection(
-                        title: '포장 꿀팁',
-                        tips: [
-                          '깨지기 쉬운 물건은 옷이나 이불로 감싸 안전하게 포장하세요.',
-                          '박스마다 내용물과 배치할 방 위치를 표시하면 정리가 쉬워집니다.',
-                          '무거운 물건은 작은 박스에 나눠 담아 운반이 쉽게 하세요.',
-                          '액체류는 뚜껑을 테이프로 고정하고 비닐로 한번 더 감싸세요.',
-                          '전자제품의 코드는 묶어서 본체와 함께 포장하세요.',
-                        ],
-                        icon: Icons.all_inbox,
-                        color: Colors.orange,
-                      ),
-
-                      SizedBox(height: 20),
-
-                      // 주의 사항
-                      _buildTipSection(
-                        title: '꼭 확인하세요!',
-                        tips: [
-                          '현금, 보석, 중요 서류 등 귀중품은 반드시 직접 챙기세요.',
-                          '이삿짐 보험 가입 여부를 확인하고 필요시 추가 보험을 고려하세요.',
-                          '새로운 주소지를 정확히 공유하고, 특별한 접근 방법이 있다면 알려주세요.',
-                          '파손 위험이 있는 물품은 미리 사진을 찍어두세요.',
-                          '냉장고는 이사 전날 전원을 끄고 물기를 완전히 제거해야 합니다.',
-                        ],
-                        icon: Icons.warning_amber,
-                        color: Colors.red,
-                        isWarning: true,
-                      ),
-
-                      SizedBox(height: 20),
-
-                      // 통계 정보
-                      Container(
-                        padding: EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: _primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '이렇게 작성하면 파트너 평가가 좋아요!',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: _primaryColor,
-                              ),
-                            ),
-                            SizedBox(height: 12),
-                            _buildStatDetail('물품 정보를 빠짐없이 기재한 고객', '95%', '긍정적 평가'),
-                            SizedBox(height: 8),
-                            _buildStatDetail('상세 정보를 정확히 입력한 고객', '93%', '원활한 이사 진행'),
-                            SizedBox(height: 8),
-                            _buildStatDetail('운반 시 주의사항을 사전에 안내한 고객', '90%', '만족도 향상'),
-                            SizedBox(height: 8),
-                            _buildStatDetail('특수 물품을 미리 고지한 고객', '89%', '추가 비용 없음'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // 하단 버튼
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: Text(
-                      '확인',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-// 단일 카테고리 팁 다이얼로그 표시
-  void _showSingleCategoryTipsDialog(String title, IconData icon, Color color) {
-    List<String> tips = [];
-
-    // 카테고리별 팁 목록
-    if (title == '비용 절약 팁') {
-      tips = [
-        '가구 규격을 정확히 입력하세요. 크기를 실제보다 작게 입력하면 추가 비용이 발생할 수 있습니다.',
-        '사전에 버릴 물건을 정리해 불필요한 운반을 줄이세요.',
-        '운반이 어려운 특수 물품은 미리 알려주세요. 준비가 필요한 경우가 있습니다.',
-        '이사 성수기(봄, 가을)를 피하면 비용이 절감될 수 있습니다.',
-        '포장 서비스가 필요한 물품을 명확히 구분해두세요.',
-      ];
-    } else if (title == '일정 관리 팁') {
-      tips = [
-        '최소 이사 2주 전에 파트너를 예약하세요. 특히 월말, 월초는 빨리 예약이 찹니다.',
-        '입주 청소는 이사 전날까지 완료하는 것이 좋습니다.',
-        '중요 물품(귀중품, 필수 생활용품)은 직접 운반할 계획을 세우세요.',
-        '이사 당일 날씨를 확인하고 우천 시 대비책을 마련해두세요.',
-        '새 집의 주차 공간과 엘리베이터 사용 규정을 미리 확인하세요.',
-      ];
-    } else if (title == '포장 꿀팁') {
-      tips = [
-        '깨지기 쉬운 물건은 옷이나 이불로 감싸 안전하게 포장하세요.',
-        '박스마다 내용물과 배치할 방 위치를 표시하면 정리가 쉬워집니다.',
-        '무거운 물건은 작은 박스에 나눠 담아 운반이 쉽게 하세요.',
-        '액체류는 뚜껑을 테이프로 고정하고 비닐로 한번 더 감싸세요.',
-        '전자제품의 코드는 묶어서 본체와 함께 포장하세요.',
-      ];
-    } else if (title == '꼭 확인하세요!') {
-      tips = [
-        '현금, 보석, 중요 서류 등 귀중품은 반드시 직접 챙기세요.',
-        '이삿짐 보험 가입 여부를 확인하고 필요시 추가 보험을 고려하세요.',
-        '새로운 주소지를 정확히 공유하고, 특별한 접근 방법이 있다면 알려주세요.',
-        '파손 위험이 있는 물품은 미리 사진을 찍어두세요.',
-        '냉장고는 이사 전날 전원을 끄고 물기를 완전히 제거해야 합니다.',
-      ];
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            SizedBox(width: 10),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primaryText,
-              ),
-            ),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: tips.map((tip) => Padding(
-              padding: const EdgeInsets.only(bottom: 10.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    title == '꼭 확인하세요!' ? Icons.priority_high : Icons.check_circle,
-                    color: color,
-                    size: 16,
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      tip,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppTheme.primaryText,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            )).toList(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              foregroundColor: color,
-            ),
-            child: Text('확인'),
-          ),
-        ],
-      ),
-    );
-  }
-
-// 팁 섹션 위젯 (다이얼로그 내부용)
-  Widget _buildTipSection({
-    required String title,
-    required List<String> tips,
-    required IconData icon,
-    required Color color,
-    bool isWarning = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            SizedBox(width: 10),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primaryText,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 12),
-        ...tips.map((tip) => Padding(
-          padding: const EdgeInsets.only(bottom: 10.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                isWarning ? Icons.priority_high : Icons.check_circle,
-                color: color,
-                size: 16,
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  tip,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.primaryText,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        )).toList(),
-      ],
-    );
-  }
-
-// 통계 세부 정보 아이템
-  Widget _buildStatDetail(String text, String percentage, String result) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
-      child: Row(
-        children: [
-          Icon(Icons.check_circle, color: _primaryColor, size: 14),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '$text ($percentage)',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.primaryText,
-              ),
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: _primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              result,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: _primaryColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // 상세정보 모달 표시
   void showItemDetailModal(BuildContext context, BaggageItem item) {
     // 현재 아이템의 모든 상세정보 가져오기
@@ -1813,10 +1231,7 @@ class _BaggageDetailScreenState extends State<BaggageDetailScreen> {
                         selectedItemsByCategory[category]!
                     ),
 
-                  SizedBox(height: 16),
-                  _buildCompactExpertTips(),
-
-                  SizedBox(height: 30),
+                  SizedBox(height: 10),
                   _buildPhotoSection(),
 
                   SizedBox(height: 30),
@@ -1849,12 +1264,12 @@ class _BaggageDetailScreenState extends State<BaggageDetailScreen> {
                     // 데이터 저장
                     _saveState();
 
-                    // 다음 단계로 이동
-                    // TODO: 여기에 견적 요청 화면으로 이동하는 코드 추가
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('견적 요청 화면으로 이동합니다'),
-                        backgroundColor: _primaryColor,
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ServiceTypeScreen(
+                          isRegularMove: widget.isRegularMove,
+                        ),
                       ),
                     );
                   },

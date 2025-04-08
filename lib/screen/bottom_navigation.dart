@@ -5,7 +5,8 @@ import 'login_screen.dart';
 import 'my_usage_history_screen.dart';
 import 'more_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import '../theme/theme_constants.dart';
+import 'package:MoveSmart/theme/theme_constants.dart';
+import 'package:MoveSmart/services/naver_auth_service.dart';
 
 class BottomNavigationBarWidget extends StatefulWidget {
   final int initialIndex; // 초기 탭을 설정하는 매개변수
@@ -22,52 +23,94 @@ class BottomNavigationBarWidget extends StatefulWidget {
 }
 
 class _BottomNavigationBarWidgetState extends State<BottomNavigationBarWidget> {
-  late int _selectedIndex; // 초기값 설정
+  late int _selectedIndex;
   GoogleSignInAccount? _currentUser; // 구글 로그인 사용자 정보
+  // NaverAccountResult 대신 단순 bool 사용
+  bool _isNaverLoggedIn = false; // 네이버 로그인 상태
   final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
-  bool _isSigningIn = false; // 자동 로그인 중인지 상태를 추적
-  bool _hasInitialized = false; // 앱이 처음 로드되었는지 여부
+  bool _isSigningIn = false;
+  bool _hasInitialized = false;
+  String? _userEmail; // 사용자 이메일
 
   @override
   void initState() {
     super.initState();
-    _selectedIndex = widget.initialIndex; // 초기 탭 설정
+    _selectedIndex = widget.initialIndex;
 
     // 구글 로그인 상태 변화 감지
     _googleSignIn.onCurrentUserChanged.listen((GoogleSignInAccount? account) {
       setState(() {
-        _currentUser = account; // 구글 로그인 상태에 따라 사용자 정보 저장
+        _currentUser = account;
+        _userEmail = account?.email;
       });
     });
 
-    _signInSilently(); // 앱 시작 시 자동 로그인 시도
+    _signInSilently();
   }
 
-  // 구글 자동 로그인 함수
+  // 자동 로그인 함수
+
   Future<void> _signInSilently() async {
-    if (_isSigningIn) return; // 이미 로그인 중이면 중복 호출 방지
+    if (_isSigningIn) return;
     setState(() {
       _isSigningIn = true;
     });
 
     try {
-      await _googleSignIn.signInSilently();
+      // 구글 자동 로그인 시도
+      final googleAccount = await _googleSignIn.signInSilently();
+      if (googleAccount != null) {
+        setState(() {
+          _currentUser = googleAccount;
+          _userEmail = googleAccount.email;
+        });
+      } else {
+        // 네이버 로그인 상태 확인
+        try {
+          final naverAuthService = NaverAuthService();
+
+          final email = await naverAuthService.getCurrentUser();
+          if (email != null) {
+            setState(() {
+              _isNaverLoggedIn = true;
+              _userEmail = email;
+            });
+          }
+        } catch (e) {
+          print('네이버 자동 로그인 확인 실패: $e');
+        }
+      }
     } catch (error) {
       print('자동 로그인 실패: $error');
     } finally {
       setState(() {
         _isSigningIn = false;
-        _hasInitialized = true; // 앱 초기화 완료
+        _hasInitialized = true;
       });
     }
   }
 
-  // 로그아웃 처리 함수
-  void _handleLogout() {
-    _googleSignIn.signOut(); // 구글 로그아웃
+// 로그아웃 처리 함수도 수정
+  void _handleLogout() async {
+    if (_currentUser != null) {
+      await _googleSignIn.signOut(); // 구글 로그아웃
+    }
+
+    if (_isNaverLoggedIn) {
+      try {
+        // 네이버 로그아웃 처리
+        final naverAuthService = NaverAuthService();
+        await naverAuthService.signOut();
+      } catch (e) {
+        print('네이버 로그아웃 실패: $e');
+      }
+    }
+
     setState(() {
-      _currentUser = null; // 로그아웃 후 사용자 정보 제거
-      _selectedIndex = 0; // 로그아웃 후 홈 화면으로 이동
+      _currentUser = null;
+      _isNaverLoggedIn = false;
+      _userEmail = null;
+      _selectedIndex = 0;
     });
   }
 
@@ -92,12 +135,12 @@ class _BottomNavigationBarWidgetState extends State<BottomNavigationBarWidget> {
         children: [
           HomeScreen(preloadedData: widget.preloadedData), // preloadedData 전달
           const PartnerSearchScreen(),
-          _currentUser == null
+          _userEmail == null
               ? const LoginScreen()
-              : MyUsageHistoryScreen(userEmail: _currentUser!.email),
+              : MyUsageHistoryScreen(userEmail: _userEmail!),
           const PlaceholderWidget('채팅'),
           MoreScreen(
-            userEmail: _currentUser?.email,
+            userEmail: _userEmail,
             onLogout: _handleLogout,
           ),
         ],

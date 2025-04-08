@@ -33,7 +33,7 @@ dependencies:
   intl: ^0.20.2
   google_sign_in: ^6.2.2
   http: ^1.3.0
-  shared_preferences: ^2.5.2
+  shared_preferences: ^2.5.3
   flutter_inappwebview: ^6.1.5
   url_launcher: ^6.3.1
   accordion: ^2.6.0
@@ -50,7 +50,9 @@ dependencies:
   camera: ^0.11.1
   googleapis: ^11.0.0
   googleapis_auth: ^1.4.0
-
+  image: ^4.5.3
+  font_awesome_flutter: ^10.8.0
+  flutter_naver_login: ^1.8.0
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -100,9 +102,11 @@ flutter:
 
   assets:
     - assets/images/rinfo.png
-    - assets/images/google_logo.png
-    - assets/kakao_juso.html
-    - assets/images/box.png
+    - assets/images/google_login_icon.png
+    - assets/images/naver_login_icon.png
+    - assets/images/kakao_login_icon.png
+    - assets/Third_Party_Consent.txt
+    - assets/Marketing_Consent.txt
     - assets/terms_of_service.txt
     - assets/review_policy.txt
     - assets/privacy_policy.txt

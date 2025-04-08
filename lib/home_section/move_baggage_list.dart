@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../theme/theme_constants.dart';
+import 'package:MoveSmart/theme/theme_constants.dart';
+import 'package:MoveSmart/home_section/models/baggage_item.dart';
+import 'package:MoveSmart/api_service.dart';
+import 'package:MoveSmart/utils/ui_extensions.dart';
 import 'move_baggage_list_detail.dart';
-import './models/baggage_item.dart';
-import '../api_service.dart';
-import '../utils/ui_extensions.dart';
 
 class BaggageListScreen extends StatefulWidget {
   final bool isRegularMove;
@@ -117,25 +117,30 @@ class _BaggageListScreenState extends State<BaggageListScreen> {
   }
 
   // 아이템 선택 토글 메서드
-
   void _toggleSelection(String category, Map<String, dynamic> itemData) {
     final String cateId = itemData['cateId'];
     final String loadCd = itemData['loadCd'];
     final String itemName = itemData['loadNm'];
+    final String? iconPath = itemData['iconPath'];  // 직접 iconPath 필드 사용
     final key = createItemKey(cateId, loadCd);
+
+    // 디버그 로깅 추가
+    debugPrint('아이템 추가: $itemName, iconPath: $iconPath');
+    debugPrint('아이템 데이터: $itemData');
 
     setState(() {
       if (!selectedItemsMap.containsKey(key)) {
         selectedItemsMap[key] = [];
       }
 
-      // 새 아이템 추가
+      // 새 아이템 추가 - iconPath 추가
       selectedItemsMap[key]!.add(BaggageItem(
         cateId: cateId,
         loadCd: loadCd,
         category: category,
         itemName: itemName,
-        subData: itemData['subData'], // subData 타입에 관계없이 그대로 전달
+        subData: itemData['subData'],
+        iconPath: iconPath,  // 아이콘 경로 전달
       ));
 
       _saveSelectedItems(); // 상태 변경 후 저장
@@ -594,39 +599,6 @@ class _BaggageListScreenState extends State<BaggageListScreen> {
                   fontSize: 18,
                 ),
               ),
-              const Spacer(),
-              InkWell(
-                onTap: () {
-                  // 상세 가이드 정보 보여주기
-                  _showDetailedTipsDialog();
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.remove_red_eye_outlined,
-                        size: 16,
-                        color: _primaryColor,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '상세보기',
-                        style: TextStyle(
-                          color: _primaryColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -712,194 +684,6 @@ class _BaggageListScreenState extends State<BaggageListScreen> {
       ],
     );
   }
-
-// 상세 팁 다이얼로그
-  void _showDetailedTipsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.lightbulb,
-              color: _primaryColor,
-              size: 24,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '이삿짐 선택 가이드',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primaryText,
-              ),
-            ),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 팁 1: 자주 누락되는 이삿짐
-              _buildDetailedTipSection(
-                title: '1. 자주 누락되는 이삿짐',
-                items: [
-                  '베란다의 화분, 자전거, 건조대',
-                  '다용도실의 공구, 생활용품',
-                  '옷장 위나 침대 밑 수납품',
-                  '천장 등의 전등과 조명 기구',
-                  '벽걸이 TV, 에어컨 등 설치형 가전',
-                  '욕실의 수납장, 거울, 변기 솔 등',
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // 팁 2: 효율적인 짐 선택 방법
-              _buildDetailedTipSection(
-                title: '2. 효율적인 짐 선택 방법',
-                items: [
-                  '최근 6개월 이내 사용하지 않은 물건은 처분 고려',
-                  '계절별로 분류하여 현재 사용 중인 물건 우선 선택',
-                  '물건의 기능적 중복성 확인 (비슷한 기능의 제품 중복 방지)',
-                  '감정적 가치와 실용적 가치를 구분하여 판단',
-                  '꼭 필요한 물건, 가끔 필요한 물건, 거의 필요 없는 물건으로 분류',
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // 팁 3: 카테고리별 주요 물품
-              _buildDetailedTipSection(
-                title: '3. 카테고리별 주요 물품',
-                items: [
-                  '침실: 침대, 매트리스, 이불, 베개, 옷장, 서랍장, 화장대',
-                  '거실: 소파, TV, 테이블, 책장, 장식장, 카펫',
-                  '주방: 냉장고, 전자레인지, 식기류, 조리도구, 식탁, 의자',
-                  '욕실: 세면도구, 수건, 욕실용품, 욕실 수납장',
-                  '서재/작업실: 책상, 의자, 책, 사무용품, 컴퓨터 관련 장비',
-                  '기타: 애완동물용품, 운동기구, 취미용품, 계절용품',
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // 팁 4: 짐 정리/포장 순서
-              _buildDetailedTipSection(
-                title: '4. 짐 정리/포장 순서',
-                items: [
-                  '단계 1: 계절 외 물품, 장식품, 예술품 등 비필수품 먼저 포장',
-                  '단계 2: 책, DVD, 취미용품 등 자주 사용하지 않는 물품',
-                  '단계 3: 주방용품 중 자주 사용하지 않는 것들',
-                  '단계 4: 옷장의 옷 중 현재 계절에 맞지 않는 옷',
-                  '단계 5: 기본 생활용품 (이사 전날)',
-                  '단계 6: 필수 개인용품은 별도 가방에 (이사 당일 사용)',
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              // 추가 팁 - 박스에 관한 내용
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: _primaryColor.withOpacity(0.3),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '박스 포장 팁',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: _primaryColor,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      '• 표준 박스 크기(60 x 40 x 45 cm)를 기준으로 포장\n'
-                          '• 무거운 물건은 작은 박스에, 가벼운 물건은 큰 박스에 담기\n'
-                          '• 박스마다 내용물을 라벨링하고 방 위치 표시하기\n'
-                          '• 깨지기 쉬운 물건은 신문지나 뽁뽁이로 개별 포장\n'
-                          '• 1인 가구 기준 약 15~20개, 2인 가구 기준 약 25~35개 필요',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.primaryText,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              foregroundColor: _primaryColor,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            ),
-            child: Text(
-              '확인',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-// 상세 팁 섹션 위젯
-  Widget _buildDetailedTipSection({required String title, required List<String> items}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: _primaryColor,
-          ),
-        ),
-        SizedBox(height: 8),
-        ...items.map((item) => Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('• ', style: TextStyle(color: _primaryColor, fontWeight: FontWeight.bold)),
-              Expanded(
-                child: Text(
-                  item,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.primaryText,
-                    height: 1.3,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        )).toList(),
-      ],
-    );
-  }
-
 
   Widget _buildBody() {
     if (isLoading) {

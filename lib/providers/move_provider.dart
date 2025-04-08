@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -29,6 +28,9 @@ class MoveData {
 
   // 이삿짐 관련 데이터
   List<Map<String, dynamic>> selectedBaggageItems = [];
+
+  // 첨부 사진 경로 목록
+  List<String> attachedPhotos = [];
 
   // 추가 설명
   String? additionalNotes;
@@ -90,6 +92,7 @@ class MoveData {
     int? selectedMemoCategory,
     List<String>? selectedTemplates,
     String? selectedServiceType,
+    List<String>? attachedPhotos,
   }) {
     return MoveData(
       selectedMoveType: selectedMoveType ?? this.selectedMoveType,
@@ -108,7 +111,8 @@ class MoveData {
       ..memo = memo ?? this.memo
       ..selectedMemoCategory = selectedMemoCategory ?? this.selectedMemoCategory
       ..selectedTemplates = selectedTemplates ?? this.selectedTemplates
-      ..selectedServiceType = selectedServiceType ?? this.selectedServiceType;
+      ..selectedServiceType = selectedServiceType ?? this.selectedServiceType
+      ..attachedPhotos = attachedPhotos ?? this.attachedPhotos; // 추가
   }
 }
 
@@ -183,7 +187,6 @@ class MoveNotifier extends StateNotifier<MoveState> {
 
   // 모든 데이터 로드
   Future<void> _loadAllData() async {
-    // 기존 코드...
     try {
       await Future.wait([
         _loadMoveType(),
@@ -194,6 +197,7 @@ class MoveNotifier extends StateNotifier<MoveState> {
         _loadRoomData(),
         _loadMemoData(),
         _loadServiceType(),
+        _loadAttachedPhotos(),
       ]);
       _initialized = true;
     } catch (e) {
@@ -201,6 +205,32 @@ class MoveNotifier extends StateNotifier<MoveState> {
     } finally {
       state = state.copyWith(isLoading: false);
     }
+  }
+
+  // 첨부 사진 로드 메서드
+  Future<void> _loadAttachedPhotos() async {
+    final prefs = await SharedPreferences.getInstance();
+    final photoPaths = prefs.getStringList('${_keyPrefix}photoPaths');
+
+    if (photoPaths != null) {
+      state = state.copyWith(
+          moveData: state.moveData.copyWith(
+            attachedPhotos: photoPaths,
+          )
+      );
+    }
+  }
+
+  // 첨부 사진 저장 메서드
+  Future<void> setAttachedPhotos(List<String> photoPaths) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('${_keyPrefix}photoPaths', photoPaths);
+
+    state = state.copyWith(
+        moveData: state.moveData.copyWith(
+          attachedPhotos: photoPaths,
+        )
+    );
   }
 
   // 이사 유형 로드
@@ -370,24 +400,70 @@ class MoveNotifier extends StateNotifier<MoveState> {
   // 이삿짐 데이터 로드
   Future<void> _loadBaggageData() async {
     final prefs = await SharedPreferences.getInstance();
-    final baggageDataString = prefs.getString('${_keyPrefix}baggageItems');
-
     List<Map<String, dynamic>> baggageItems = [];
 
-    if (baggageDataString != null) {
+    // 먼저 기존 방식으로 데이터 로드 시도
+    final baggageDataString = prefs.getString('${_keyPrefix}baggageItems');
+    if (baggageDataString != null && baggageDataString.isNotEmpty) {
       try {
         final List<dynamic> decodedList = jsonDecode(baggageDataString);
         baggageItems = List<Map<String, dynamic>>.from(
             decodedList.map((item) => Map<String, dynamic>.from(item))
         );
+        print('기존 방식으로 이삿짐 데이터 로드 성공: ${baggageItems.length}개 항목');
       } catch (e) {
-        print('이삿짐 데이터 파싱 오류: $e');
+        print('기존 이삿짐 데이터 파싱 오류: $e');
       }
     }
 
+    // 기존 방식으로 데이터가 없으면 새로운 방식(BaggageListScreen)의 데이터 로드 시도
+    if (baggageItems.isEmpty) {
+      final selectedItemsMapString = prefs.getString('${_keyPrefix}selectedItemsMap');
+      if (selectedItemsMapString != null && selectedItemsMapString.isNotEmpty) {
+        try {
+          final Map<String, dynamic> selectedItemsMap = jsonDecode(selectedItemsMapString);
+          print('새로운 방식의 이삿짐 데이터 로드: $selectedItemsMap');
+
+          // selectedItemsMap을 순회하며 데이터 추출
+          selectedItemsMap.forEach((key, value) {
+            if (value is List) {
+              for (var item in value) {
+                if (item is Map) {
+                  // 필요한 정보 추출하여 MoveData 형식에 맞게 변환
+                  Map<String, dynamic> itemData = Map<String, dynamic>.from(item);
+
+                  // 필수 항목 확인
+                  if (itemData.containsKey('itemName') || itemData.containsKey('loadNm')) {
+                    Map<String, dynamic> baggageItem = {
+                      'itemName': itemData['itemName'] ?? itemData['loadNm'] ?? 'Unknown Item',
+                      'category': itemData['category'] ?? 'Unknown Category',
+                      'options': itemData['options'] ?? {},
+                      'iconPath': itemData['iconPath'], // iconPath 추가!
+                    };
+
+                    // 추가 정보가 있으면 포함
+                    if (itemData.containsKey('cateId')) baggageItem['cateId'] = itemData['cateId'];
+                    if (itemData.containsKey('loadCd')) baggageItem['loadCd'] = itemData['loadCd'];
+                    if (itemData.containsKey('subData')) baggageItem['subData'] = itemData['subData'];
+
+                    baggageItems.add(baggageItem);
+                  }
+                }
+              }
+            }
+          });
+          print('변환된 이삿짐 데이터: ${baggageItems.length}개 항목');
+        } catch (e) {
+          print('새로운 이삿짐 데이터 파싱 오류: $e');
+        }
+      } else {
+        print('이삿짐 데이터가 없음 (두 형식 모두)');
+      }
+    }
+
+    // 상태 업데이트
     final newMoveData = state.moveData.copyWith();
     newMoveData.selectedBaggageItems = baggageItems;
-
     state = state.copyWith(moveData: newMoveData);
   }
 
