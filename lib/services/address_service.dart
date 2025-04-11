@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
+import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // AddressService 프로바이더
@@ -19,6 +20,7 @@ class AddressServiceState {
   final String? errorMessage;
   final bool hasMoreResults;
   final int currentPage;
+  final SearchStatus searchStatus;
 
   AddressServiceState({
     this.searchResults = const [],
@@ -28,6 +30,7 @@ class AddressServiceState {
     this.errorMessage,
     this.hasMoreResults = false,
     this.currentPage = 1,
+    this.searchStatus = SearchStatus.initial,
   });
 
   AddressServiceState copyWith({
@@ -38,6 +41,7 @@ class AddressServiceState {
     String? errorMessage,
     bool? hasMoreResults,
     int? currentPage,
+    SearchStatus? searchStatus,
   }) {
     return AddressServiceState(
       searchResults: searchResults ?? this.searchResults,
@@ -47,8 +51,18 @@ class AddressServiceState {
       errorMessage: errorMessage,
       hasMoreResults: hasMoreResults ?? this.hasMoreResults,
       currentPage: currentPage ?? this.currentPage,
+      searchStatus: searchStatus ?? this.searchStatus,
     );
   }
+}
+
+// 검색 상태 열거형 추가
+enum SearchStatus {
+  initial,
+  loading,
+  success,
+  noResults,
+  error
 }
 
 // 주소 검색 결과를 위한 모델 클래스
@@ -96,12 +110,11 @@ class AddressResult {
 
 // 주소 검색 서비스 StateNotifier
 class AddressServiceNotifier extends StateNotifier<AddressServiceState> {
-  // 최근 검색 캐시
-  final Map<String, List<AddressResult>> _searchCache = {};
-
-  // 최근 검색 주소 저장용 키
+  Timer? _debounceTimer;
+  final _searchCache = <String, List<AddressResult>>{};
   static const String _recentAddressesKey = 'recent_search_addresses';
   static const int _maxRecentAddresses = 5;
+  static const _debounceDuration = Duration(milliseconds: 500);
 
   AddressServiceNotifier() : super(AddressServiceState()) {
     _loadRecentAddresses();
@@ -126,7 +139,7 @@ class AddressServiceNotifier extends StateNotifier<AddressServiceState> {
         state = state.copyWith(recentAddressesList: recentAddresses);
       }
     } catch (e) {
-      print('최근 검색 주소 로드 오류: $e');
+      debugPrint('최근 검색 주소 로드 오류: $e');
     }
   }
 
@@ -138,8 +151,29 @@ class AddressServiceNotifier extends StateNotifier<AddressServiceState> {
       state.recentAddressesList.map((address) => address.toJson()).toList();
       await prefs.setString(_recentAddressesKey, jsonEncode(addressesJson));
     } catch (e) {
-      print('최근 검색 주소 저장 오류: $e');
+      debugPrint('최근 검색 주소 저장 오류: $e');
     }
+  }
+
+  // 디바운싱 기능이 추가된 주소 검색 메서드
+  void searchAddressWithDebounce(String keyword) {
+    // 이전 타이머 취소
+    _debounceTimer?.cancel();
+
+    // 검색어가 너무 짧은 경우 즉시 상태 업데이트
+    if (keyword.length < 2) {
+      state = state.copyWith(
+        errorMessage: '검색어는 2글자 이상 입력해주세요',
+        searchResults: [],
+        searchStatus: SearchStatus.initial,
+      );
+      return;
+    }
+
+    // 새 타이머 생성
+    _debounceTimer = Timer(_debounceDuration, () {
+      searchAddress(keyword);
+    });
   }
 
   // 최근 검색 주소에 추가
@@ -182,14 +216,8 @@ class AddressServiceNotifier extends StateNotifier<AddressServiceState> {
 
   // 주소 검색 실행
   Future<void> searchAddress(String keyword) async {
-    // 검색어가 너무 짧은 경우
-    if (keyword.length < 2) {
-      state = state.copyWith(
-        errorMessage: '검색어는 2글자 이상 입력해주세요',
-        searchResults: [],
-      );
-      return;
-    }
+    // 이전 타이머 취소
+    _debounceTimer?.cancel();
 
     // 이전 검색 정보 초기화
     state = state.copyWith(
@@ -197,6 +225,7 @@ class AddressServiceNotifier extends StateNotifier<AddressServiceState> {
       currentPage: 1,
       errorMessage: null,
       isLoading: true,
+      searchStatus: SearchStatus.loading,
     );
 
     // 캐시에 있는지 확인
@@ -205,6 +234,9 @@ class AddressServiceNotifier extends StateNotifier<AddressServiceState> {
         searchResults: _searchCache[keyword]!,
         hasMoreResults: _searchCache[keyword]!.length >= 10,
         isLoading: false,
+        searchStatus: _searchCache[keyword]!.isEmpty
+            ? SearchStatus.noResults
+            : SearchStatus.success,
       );
       return;
     }
@@ -217,6 +249,9 @@ class AddressServiceNotifier extends StateNotifier<AddressServiceState> {
         searchResults: results,
         hasMoreResults: results.length >= 10,
         isLoading: false,
+        searchStatus: results.isEmpty
+            ? SearchStatus.noResults
+            : SearchStatus.success,
       );
 
       // 결과 캐시에 저장
@@ -226,7 +261,15 @@ class AddressServiceNotifier extends StateNotifier<AddressServiceState> {
         errorMessage: '주소 검색 중 오류가 발생했습니다: $e',
         searchResults: [],
         isLoading: false,
+        searchStatus: SearchStatus.error,
       );
+    }
+  }
+
+  // 검색 재시도 메서드 추가
+  void retrySearch() {
+    if (state.keyword.isNotEmpty) {
+      searchAddress(state.keyword);
     }
   }
 
@@ -306,5 +349,11 @@ class AddressServiceNotifier extends StateNotifier<AddressServiceState> {
       hasMoreResults: false,
       currentPage: 1,
     );
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
   }
 }

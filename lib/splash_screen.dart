@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import './screen/bottom_navigation.dart';
+import 'screen/navigation/bottom_navigation.dart';
 
 class SplashScreen extends StatefulWidget {
   final Map<String, dynamic> preloadedData;

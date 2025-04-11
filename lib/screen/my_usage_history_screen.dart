@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../theme/theme_constants.dart';
-import '../utils/ui_extensions.dart';
+import 'package:MoveSmart/theme/theme_constants.dart';
+import 'package:MoveSmart/utils/ui_extensions.dart';
 
 class MyUsageHistoryScreen extends StatefulWidget {
   final String? userEmail; // null이면 비로그인 상태

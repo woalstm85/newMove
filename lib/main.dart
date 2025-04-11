@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:MoveSmart/screen/bottom_navigation.dart';
-import 'package:flutter_naver_login/flutter_naver_login.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:MoveSmart/screen/navigation/bottom_navigation.dart';
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
 
 Future<void> main() async {
   // .env 파일 로드
@@ -11,7 +13,20 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
 
-  runApp(const MyApp());
+  // 카카오 SDK 초기화 - 네이티브 앱 키 사용
+  final kakaoAppKey = dotenv.env['KAKAO_NATIVE_APP_KEY'] ?? '';
+  KakaoSdk.init(nativeAppKey: kakaoAppKey);
+
+  // 카카오 SDK origin 확인
+  debugPrint('카카오 SDK Origin: ${await KakaoSdk.origin}');
+
+
+  runApp(
+    // ProviderScope로 앱 감싸기
+    ProviderScope(
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

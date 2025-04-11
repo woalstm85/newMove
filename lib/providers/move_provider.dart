@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -152,7 +153,7 @@ class MoveNotifier extends StateNotifier<MoveState> {
 
   MoveNotifier({required this.isRegularMove})
       : super(MoveState(moveData: MoveData(), isLoading: true)) {
-    print('MoveNotifier initialized for isRegularMove: $isRegularMove');
+    debugPrint('MoveNotifier initialized for isRegularMove: $isRegularMove');
     _loadAllData();
   }
 
@@ -201,7 +202,7 @@ class MoveNotifier extends StateNotifier<MoveState> {
       ]);
       _initialized = true;
     } catch (e) {
-      print('데이터 로드 오류: $e');
+      debugPrint('데이터 로드 오류: $e');
     } finally {
       state = state.copyWith(isLoading: false);
     }
@@ -248,18 +249,18 @@ class MoveNotifier extends StateNotifier<MoveState> {
 
   // 이사 유형 저장
   Future<void> setMoveType(String moveType) async {
-    print('Provider setMoveType called with: $moveType');
+    debugPrint('Provider setMoveType called with: $moveType');
     final prefs = await SharedPreferences.getInstance();
 
-    print('Saving to key: ${_keyPrefix}selectedMoveType');
+    debugPrint('Saving to key: ${_keyPrefix}selectedMoveType');
     await prefs.setString('${_keyPrefix}selectedMoveType', moveType);
 
-    print('Updating state with moveType: $moveType');
+    debugPrint('Updating state with moveType: $moveType');
     state = state.copyWith(
         moveData: state.moveData.copyWith(selectedMoveType: moveType)
     );
 
-    print('Current state after update: $state');
+    debugPrint('Current state after update: $state');
   }
 
   // 날짜 및 시간 로드
@@ -268,13 +269,13 @@ class MoveNotifier extends StateNotifier<MoveState> {
     final savedDateStr = prefs.getString('${_keyPrefix}selectedDate');
     final savedTime = prefs.getString('${_keyPrefix}selectedTime');
 
-    print('날짜 로드 시도: 키=${_keyPrefix}selectedDate, 저장된 값=$savedDateStr, isRegularMove=$isRegularMove');
-    print('시간 로드 시도: 키=${_keyPrefix}selectedTime, 저장된 값=$savedTime, isRegularMove=$isRegularMove');
+    debugPrint('날짜 로드 시도: 키=${_keyPrefix}selectedDate, 저장된 값=$savedDateStr, isRegularMove=$isRegularMove');
+    debugPrint('시간 로드 시도: 키=${_keyPrefix}selectedTime, 저장된 값=$savedTime, isRegularMove=$isRegularMove');
 
     DateTime? date;
     if (savedDateStr != null) {
       date = DateTime.parse(savedDateStr);
-      print('날짜 파싱 결과: $date');
+      debugPrint('날짜 파싱 결과: $date');
     }
 
     state = state.copyWith(
@@ -291,7 +292,7 @@ class MoveNotifier extends StateNotifier<MoveState> {
     final key = '${_keyPrefix}selectedDate';
     final value = date.toIso8601String();
 
-    print('날짜 저장 시도: 키=$key, 값=$value, isRegularMove=$isRegularMove');
+    debugPrint('날짜 저장 시도: 키=$key, 값=$value, isRegularMove=$isRegularMove');
 
     await prefs.setString(key, value);
 
@@ -301,7 +302,7 @@ class MoveNotifier extends StateNotifier<MoveState> {
 
     // 저장 확인
     final savedValue = prefs.getString(key);
-    print('저장 확인: 키=$key, 저장된 값=$savedValue');
+    debugPrint('저장 확인: 키=$key, 저장된 값=$savedValue');
   }
 
   // 시간 설정
@@ -410,9 +411,9 @@ class MoveNotifier extends StateNotifier<MoveState> {
         baggageItems = List<Map<String, dynamic>>.from(
             decodedList.map((item) => Map<String, dynamic>.from(item))
         );
-        print('기존 방식으로 이삿짐 데이터 로드 성공: ${baggageItems.length}개 항목');
+        debugPrint('기존 방식으로 이삿짐 데이터 로드 성공: ${baggageItems.length}개 항목');
       } catch (e) {
-        print('기존 이삿짐 데이터 파싱 오류: $e');
+        debugPrint('기존 이삿짐 데이터 파싱 오류: $e');
       }
     }
 
@@ -422,7 +423,7 @@ class MoveNotifier extends StateNotifier<MoveState> {
       if (selectedItemsMapString != null && selectedItemsMapString.isNotEmpty) {
         try {
           final Map<String, dynamic> selectedItemsMap = jsonDecode(selectedItemsMapString);
-          print('새로운 방식의 이삿짐 데이터 로드: $selectedItemsMap');
+          debugPrint('새로운 방식의 이삿짐 데이터 로드: $selectedItemsMap');
 
           // selectedItemsMap을 순회하며 데이터 추출
           selectedItemsMap.forEach((key, value) {
@@ -452,12 +453,12 @@ class MoveNotifier extends StateNotifier<MoveState> {
               }
             }
           });
-          print('변환된 이삿짐 데이터: ${baggageItems.length}개 항목');
+          debugPrint('변환된 이삿짐 데이터: ${baggageItems.length}개 항목');
         } catch (e) {
-          print('새로운 이삿짐 데이터 파싱 오류: $e');
+          debugPrint('새로운 이삿짐 데이터 파싱 오류: $e');
         }
       } else {
-        print('이삿짐 데이터가 없음 (두 형식 모두)');
+        debugPrint('이삿짐 데이터가 없음 (두 형식 모두)');
       }
     }
 

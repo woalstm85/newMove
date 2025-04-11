@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
-import '../theme/theme_constants.dart';
+import 'package:MoveSmart/theme/theme_constants.dart';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis/vision/v1.dart' as vision;
 import 'package:flutter/services.dart' show rootBundle;
@@ -157,7 +157,7 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
           currentScreen = ScreenState.result;
         });
       } catch (e) {
-        print('Image capture error: $e');
+        debugPrint('Image capture error: $e');
         _showErrorSnackBar('이미지 촬영 중 오류가 발생했습니다.');
         setState(() {
           currentScreen = ScreenState.camera;
@@ -185,7 +185,7 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
           currentScreen = ScreenState.result;
         });
       } catch (e) {
-        print('Gallery image processing error: $e');
+        debugPrint('Gallery image processing error: $e');
         _showErrorSnackBar('갤러리 이미지 처리 중 오류가 발생했습니다.');
         setState(() {
           currentScreen = ScreenState.camera;
@@ -373,7 +373,7 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> with Widg
       // HTTP 클라이언트 닫기
       httpClient.close();
     } catch (e) {
-      print('이미지 분석 오류: $e');
+      debugPrint('이미지 분석 오류: $e');
       _showErrorSnackBar('이미지 분석 중 오류가 발생했습니다.');
       rethrow;
     }

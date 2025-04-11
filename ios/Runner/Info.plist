@@ -11,6 +11,10 @@
           <string>tel</string>
           <string>naversearchapp</string>
           <string>naversearchthirdlogin</string>
+          <string>kakaokompassauth</string>
+          <string>kakaolink</string>
+          <string>kakaoa46c9362efa1eb7af63f250272fd42bf</string>
+          <string>kakaoplus</string>
         </array>
         <key>CFBundleURLTypes</key>
         <array>
@@ -19,9 +23,15 @@
                 <string>Editor</string>
                 <key>CFBundleURLSchemes</key>
                 <array>
-                    <!-- 네이버 개발자 센터에서 받은 클라이언트 ID로 변경해야 함 -->
-                    <!-- 예시: 클라이언트 ID가 abcdefg라면 -->
                     <string>naverlogin.trQDT37uekxM1SE8xvz5</string>
+                </array>
+            </dict>
+            <dict>
+                <key>CFBundleTypeRole</key>
+                <string>Editor</string>
+                <key>CFBundleURLSchemes</key>
+                <array>
+                    <string>kakaoa46c9362efa1eb7af63f250272fd42bf</string>
                 </array>
             </dict>
         </array>
