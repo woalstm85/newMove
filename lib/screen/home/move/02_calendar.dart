@@ -1,3 +1,4 @@
+import 'package:MoveSmart/screen/home/move/move_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -128,9 +129,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen>
       appBar: buildCommonAppBar(
         title: '예정일 입력',
       ),
-      body: isLoading
-          ? buildLoadingWidget(message: '일정 정보를 불러오는 중입니다...')
-          : _buildCalendarBody(),
+      body: Column(
+        children: [
+          // 진행 상황 표시 바 (앱바 바로 아래)
+          MoveProgressBar(
+            currentStep: 0,  // 첫 번째 단계
+            isRegularMove: isRegularMove,
+          ),
+
+          // 본문 컨텐츠
+          Expanded(
+            child: isLoading
+                ? buildLoadingWidget(message: '일정 정보를 불러오는 중입니다...')
+                : _buildCalendarBody(),
+          ),
+        ],
+      ),
       bottomNavigationBar: _buildBottomButton(),
     );
   }

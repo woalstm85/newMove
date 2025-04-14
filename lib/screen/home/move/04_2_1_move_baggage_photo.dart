@@ -1,12 +1,13 @@
 import 'dart:io';
+import 'package:MoveSmart/screen/home/move/move_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
 import 'package:MoveSmart/screen/home/move/modal/move_room_select.dart';
 import 'package:MoveSmart/screen/home/move/modal/move_image_add.dart';
-import 'move_baggage_photo_detail.dart';
+import '04_2_2_move_baggage_photo_detail.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'move_baggage_photo_view.dart';
+import '04_2_3_move_baggage_photo_view.dart';
 import 'package:MoveSmart/providers/move_provider.dart';
 import 'package:MoveSmart/utils/ui_mixins.dart';
 import 'package:MoveSmart/utils/ui_extensions.dart';
@@ -94,7 +95,6 @@ class _RoomPhotoScreenState extends ConsumerState<RoomPhotoScreen> with MoveFlow
   }
 
   // 방 카테고리 클릭 시 모달 표시
-// move_baggage_photo.dart 파일에서:
   Future<void> _showRoomSelectionDialog({int? roomIndex}) async {
     debugPrint('isRegularMove value: ${widget.isRegularMove}'); // 디버그 출력
     showRoomSelectionModal(
@@ -203,6 +203,11 @@ class _RoomPhotoScreenState extends ConsumerState<RoomPhotoScreen> with MoveFlow
       ),
       body: Column(
         children: [
+          // 진행 상황 표시 바 (앱바 바로 아래)
+          MoveProgressBar(
+            currentStep: 2,  // 첫 번째 단계
+            isRegularMove: isRegularMove,
+          ),
           // 상단 설명 섹션
           Container(
             padding: const EdgeInsets.all(20.0),
@@ -597,8 +602,6 @@ class _RoomPhotoScreenState extends ConsumerState<RoomPhotoScreen> with MoveFlow
   }
 
   // 선택된 이미지 보여주기
-// move_baggage_photo.dart 파일의 _buildSelectedImage 메서드 수정
-
   Widget _buildSelectedImage(int roomIndex, int imageIndex) {
     return Padding(
       padding: const EdgeInsets.only(right: 10.0),

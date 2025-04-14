@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
-import 'package:MoveSmart/screen/home/move/move_baggage_photo.dart';
-import 'package:MoveSmart/screen/home/move/move_baggage_list.dart';
+import 'package:MoveSmart/screen/home/move/04_2_1_move_baggage_photo.dart';
+import 'package:MoveSmart/screen/home/move/04_1_1_move_baggage_list.dart';
 import 'package:MoveSmart/providers/move_provider.dart';
 import 'package:MoveSmart/utils/ui_extensions.dart';
 import 'package:MoveSmart/utils/ui_mixins.dart';

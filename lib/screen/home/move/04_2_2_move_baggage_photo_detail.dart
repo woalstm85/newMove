@@ -1,10 +1,11 @@
+import 'package:MoveSmart/screen/home/move/move_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
 import 'package:MoveSmart/providers/move_provider.dart';
 import 'package:MoveSmart/utils/ui_extensions.dart';
 import 'package:MoveSmart/utils/ui_mixins.dart';
-import 'move_result_service_type.dart';
+import '05_move_result_service_type.dart';
 
 class BoxMemoScreen extends ConsumerStatefulWidget {
   final bool isRegularMove;
@@ -130,6 +131,11 @@ class _BoxMemoScreenState extends ConsumerState<BoxMemoScreen> with MoveFlowMixi
       ),
       body: Column(
         children: [
+          // 진행 상황 표시 바 (앱바 바로 아래)
+          MoveProgressBar(
+            currentStep: 3,  // 첫 번째 단계
+            isRegularMove: isRegularMove,
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.all(context.defaultPadding),

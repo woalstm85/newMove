@@ -1,13 +1,12 @@
 import 'dart:convert';
+import 'package:MoveSmart/screen/home/move/move_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
 import 'models/baggage_item.dart';
-import 'package:MoveSmart/api_service.dart';
-import 'API/address_service.dart';
 import 'API/moving_service.dart';
 import 'package:MoveSmart/utils/ui_extensions.dart';
-import 'move_baggage_list_detail.dart';
+import '04_1_2_move_baggage_list_detail.dart';
 
 class BaggageListScreen extends StatefulWidget {
   final bool isRegularMove;
@@ -339,7 +338,7 @@ class _BaggageListScreenState extends State<BaggageListScreen> {
                         ),
                         if (count > 1)
                           Positioned(
-                            right: 3,
+                            right: 8,
                             top: 0,
                             child: Container(
                               padding: const EdgeInsets.all(5),
@@ -570,123 +569,6 @@ class _BaggageListScreenState extends State<BaggageListScreen> {
     );
   }
 
-  Widget _buildMovingTips() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            offset: const Offset(0, 2),
-            blurRadius: 6.0,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.lightbulb_outline,
-                size: 20,
-                color: _primaryColor,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '이삿짐 선택 가이드',
-                style: AppTheme.subheadingStyle.copyWith(
-                  fontSize: 18,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // 팁 리스트
-          _buildTipItem(
-            icon: Icons.error_outline,
-            title: '자주 누락되는 이삿짐',
-            description: '베란다, 다용도실, 옷장 위의 물건들을 꼭 확인하세요.',
-          ),
-          const SizedBox(height: 12),
-
-          _buildTipItem(
-            icon: Icons.sort,
-            title: '효율적인 짐 선택 방법',
-            description: '최근 6개월간 사용하지 않은 물건은 처분을 고려해보세요.',
-          ),
-          const SizedBox(height: 12),
-
-          _buildTipItem(
-            icon: Icons.category_outlined,
-            title: '카테고리별 주요 물품',
-            description: '각 공간별로 물품을 분류하면 빠짐없이 선택할 수 있습니다.',
-          ),
-          const SizedBox(height: 12),
-
-          _buildTipItem(
-            icon: Icons.format_list_numbered,
-            title: '짐 정리/포장 순서',
-            description: '자주 사용하지 않는 물건부터 먼저 포장하세요.',
-          ),
-        ],
-      ),
-    );
-  }
-
-// 팁 아이템 위젯
-  Widget _buildTipItem({
-    required IconData icon,
-    required String title,
-    required String description,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: _primaryColor,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryText,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                description,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.secondaryText,
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildBody() {
     if (isLoading) {
       return const Center(
@@ -829,13 +711,6 @@ class _BaggageListScreenState extends State<BaggageListScreen> {
                     );
                   },
                 ),
-
-                const SizedBox(height: 20),
-
-                // 이삿짐 선택 팁
-                _buildMovingTips(),
-
-                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -880,11 +755,24 @@ class _BaggageListScreenState extends State<BaggageListScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: _buildBody(),
-        ),
+      body: Column(
+        children: [
+          // 진행 상황 표시 바 추가
+          MoveProgressBar(
+            currentStep: 2,  // 세 번째 단계 (짐 선택)
+            isRegularMove: widget.isRegularMove,
+          ),
+
+          // 본문 내용
+          Expanded(
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: _buildBody(),
+              ),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
@@ -972,12 +860,6 @@ class _BaggageListScreenState extends State<BaggageListScreen> {
                 icon: Icons.remove_circle_outline,
                 title: '물품 제거',
                 description: '추가된 물품의 오른쪽 하단 - 버튼을 탭하면 해당 물품이 제거됩니다.',
-              ),
-              const SizedBox(height: 16),
-              _buildHelpItem(
-                icon: Icons.inventory_2,
-                title: '박스 개수',
-                description: '이삿짐을 담을 박스의 개수를 설정합니다. + 또는 - 버튼으로 조절할 수 있습니다.',
               ),
               const SizedBox(height: 16),
               _buildHelpItem(

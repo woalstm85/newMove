@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:MoveSmart/screen/home/move/move_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,8 +10,8 @@ import 'package:MoveSmart/utils/ui_extensions.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
 import 'package:MoveSmart/screen/home/move/modal/move_baggage_detail.dart';
 import 'models/baggage_item.dart';
-import 'package:MoveSmart/screen/home/move/move_baggage_photo_view.dart';
-import 'package:MoveSmart/screen/home/move/move_result_service_type.dart';
+import 'package:MoveSmart/screen/home/move/04_2_3_move_baggage_photo_view.dart';
+import 'package:MoveSmart/screen/home/move/05_move_result_service_type.dart';
 
 
 class BaggageDetailScreen extends ConsumerStatefulWidget {
@@ -1091,6 +1092,11 @@ class _BaggageDetailScreenState extends ConsumerState<BaggageDetailScreen> {
       ),
       body: Column(
         children: [
+          // 진행 상황 표시 바 추가
+          MoveProgressBar(
+            currentStep: 3,  // 세 번째 단계 (짐 선택)
+            isRegularMove: widget.isRegularMove,
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),

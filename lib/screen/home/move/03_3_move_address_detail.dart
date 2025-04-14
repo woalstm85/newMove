@@ -5,7 +5,7 @@ import 'package:MoveSmart/providers/move_provider.dart';
 import 'package:MoveSmart/utils/ui_extensions.dart';
 import 'package:MoveSmart/utils/ui_mixins.dart';
 
-import 'move_address_search.dart';
+import '03_2_move_address_search.dart';
 
 import 'package:MoveSmart/screen/home/move/modal/move_floor.dart';
 import 'package:MoveSmart/screen/home/move/modal/move_home_size.dart';

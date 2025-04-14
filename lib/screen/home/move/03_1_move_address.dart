@@ -1,3 +1,4 @@
+import 'package:MoveSmart/screen/home/move/move_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
@@ -6,8 +7,8 @@ import 'package:MoveSmart/utils/ui_extensions.dart';
 import 'package:MoveSmart/utils/ui_mixins.dart';
 import 'package:MoveSmart/screen/home/move/components/03_address/address_card.dart';
 
-import 'package:MoveSmart/screen/home/move/move_address_search.dart';
-import 'package:MoveSmart/screen/home/move/move_address_detail.dart';
+import 'package:MoveSmart/screen/home/move/03_2_move_address_search.dart';
+import 'package:MoveSmart/screen/home/move/03_3_move_address_detail.dart';
 
 import 'package:MoveSmart/screen/home/move/modal/baggage_type.dart';
 
@@ -205,6 +206,11 @@ class _AddressInputScreenState extends ConsumerState<AddressInputScreen> with Mo
       appBar: _buildAppBar(),
       body: Column(
         children: [
+          // 진행 상황 표시 바 (앱바 바로 아래)
+          MoveProgressBar(
+            currentStep: 1,  // 첫 번째 단계
+            isRegularMove: isRegularMove,
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.all(context.defaultPadding),

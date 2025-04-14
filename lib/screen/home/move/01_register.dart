@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
-import 'package:MoveSmart/screen/home/move/modal/01_1_regular_type.dart';
-import 'package:MoveSmart/screen/home/move/modal/01_2_special_type.dart';
+import 'package:MoveSmart/screen/home/move/modal/regular_type.dart';
+import 'package:MoveSmart/screen/home/move/modal/special_type.dart';
 import 'widgets/move_widget.dart';
 import 'package:MoveSmart/providers/move_provider.dart';
 

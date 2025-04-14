@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:MoveSmart/screen/home/move/move_progress_bar.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -178,6 +179,11 @@ class _FinalReviewScreenState extends ConsumerState<FinalReviewScreen> with Move
       ),
       body: Column(
         children: [
+          // 진행 상황 표시 바 (앱바 바로 아래)
+          MoveProgressBar(
+            currentStep: 6,  // 첫 번째 단계
+            isRegularMove: isRegularMove,
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.all(context.defaultPadding),
@@ -188,19 +194,6 @@ class _FinalReviewScreenState extends ConsumerState<FinalReviewScreen> with Move
                   Center(
                     child: Column(
                       children: [
-                        Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: themeColor.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.check_circle_outline,
-                            color: themeColor,
-                            size: 40,
-                          ),
-                        ),
-                        SizedBox(height: 16),
                         Text(
                           '입력하신 정보를 확인해주세요',
                           style: TextStyle(
@@ -209,7 +202,6 @@ class _FinalReviewScreenState extends ConsumerState<FinalReviewScreen> with Move
                             color: themeColor,
                           ),
                         ),
-                        SizedBox(height: 8),
                         Text(
                           '추가 질문이나 수정이 필요하면 뒤로 가기를 눌러주세요',
                           style: TextStyle(
@@ -222,7 +214,7 @@ class _FinalReviewScreenState extends ConsumerState<FinalReviewScreen> with Move
                     ),
                   ),
 
-                  SizedBox(height: 24),
+                  SizedBox(height: 15),
 
                   // 이사 유형 정보
                   _buildSectionCard(

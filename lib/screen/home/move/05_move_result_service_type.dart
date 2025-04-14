@@ -1,3 +1,4 @@
+import 'package:MoveSmart/screen/home/move/move_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:MoveSmart/screen/home/move/final_review_screen.dart';
@@ -270,8 +271,12 @@ class _ServiceTypeScreenState extends ConsumerState<ServiceTypeScreen> with Move
         centerTitle: true,
       ),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // 진행 상황 표시 바 (앱바 바로 아래)
+          MoveProgressBar(
+            currentStep: 4,  // 첫 번째 단계
+            isRegularMove: isRegularMove,
+          ),
           // 헤더 섹션
           Padding(
             padding: EdgeInsets.all(context.defaultPadding),
@@ -286,7 +291,6 @@ class _ServiceTypeScreenState extends ConsumerState<ServiceTypeScreen> with Move
                     color: primaryColor,
                   ),
                 ),
-                SizedBox(height: 8),
                 Text(
                   showTabs ? '원하시는 서비스 유형을 선택해주세요' : '서비스 내용을 확인해주세요',
                   style: TextStyle(
@@ -304,7 +308,6 @@ class _ServiceTypeScreenState extends ConsumerState<ServiceTypeScreen> with Move
               padding: EdgeInsets.symmetric(horizontal: context.defaultPadding),
               child: _buildServiceTypeTabs(),
             ),
-            SizedBox(height: 10),
           ],
 
 
