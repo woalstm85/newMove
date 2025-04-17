@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
+import 'package:MoveSmart/utils/ui_extensions.dart';
 
 class AccountSettingsScreen extends StatefulWidget {
   final String userEmail;
@@ -69,7 +70,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
               _buildSectionWithArrow(
                 context: context,
                 title: '휴대전화 번호',
-                value: widget.phoneNumber,
+                value: widget.phoneNumber.formatPhoneNumber(),
                 onTap: () {
                   // 휴대전화 번호 수정 화면으로 이동
                 },
@@ -98,8 +99,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                 context: context,
                 title: '마케팅 정보 수신 동의',
                 description: '현재 마케팅 정보 수신에 ${_marketingConsent
-                    ? '동의'
-                    : '동의하지 않음'}하셨습니다.\n'
+                    ? '동의하였습니다'
+                    : '동의하지 않았습니다'}.\n'
                     '* 마케팅 정보 수신 동의를 철회하면 이메일, 문자(SMS), 푸시 알림을 통한 이벤트, 할인 쿠폰, 프로모션 등의 정보를 더 이상 받지 않게 됩니다.\n'
                     '* 기본 서비스 이용에는 영향을 미치지 않습니다.',
                 value: _marketingConsent,
@@ -118,8 +119,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                 context: context,
                 title: '제3자 정보 제공 동의',
                 description: '현재 제3자(이삿짐센터, 쿠폰 발송 업체 등)에게 개인정보 제공에 ${_thirdPartyConsent
-                    ? '동의'
-                    : '동의하지 않음'}하셨습니다.\n'
+                    ? '동의하였습니다'
+                    : '동의하지 않았습니다'}.\n'
                     '* 제3자 정보 제공 동의를 철회하면 해당 업체에서 고객님의 개인정보를 더 이상 사용할 수 없도록 요청됩니다.\n'
                     '* 기본 서비스 이용에는 영향을 미치지 않습니다.\n'
                     '* 처리 완료까지 최대 7일이 소요될 수 있습니다.',

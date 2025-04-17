@@ -494,14 +494,18 @@ class _ServiceTypeScreenState extends ConsumerState<ServiceTypeScreen> with Move
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.borderColor),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
+                blurRadius: 5,
+                spreadRadius: 0,
+                offset: Offset(0, 2),
               ),
             ],
+            border: Border.all(
+              color: AppTheme.borderSubColor,
+              width: 1,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -548,14 +552,18 @@ class _ServiceTypeScreenState extends ConsumerState<ServiceTypeScreen> with Move
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.borderColor),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
+                blurRadius: 5,
+                spreadRadius: 0,
+                offset: Offset(0, 2),
               ),
             ],
+            border: Border.all(
+              color: AppTheme.borderSubColor,
+              width: 1,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -582,14 +590,18 @@ class _ServiceTypeScreenState extends ConsumerState<ServiceTypeScreen> with Move
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.borderColor),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
+                blurRadius: 5,
+                spreadRadius: 0,
+                offset: Offset(0, 2),
               ),
             ],
+            border: Border.all(
+              color: AppTheme.borderSubColor,
+              width: 1,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

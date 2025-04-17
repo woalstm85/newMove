@@ -24,13 +24,6 @@ class MoveProgressBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 3,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -48,7 +41,7 @@ class MoveProgressBar extends StatelessWidget {
                     children: List.generate(5, (index) {
                       return Expanded(
                         child: Container(
-                          height: 3,
+                          height: 1,
                           decoration: BoxDecoration(
                             color: index < currentStep ? primaryColor : secondaryColor,
                             borderRadius: BorderRadius.circular(1.5),
@@ -86,7 +79,7 @@ class MoveProgressBar extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: isActive ? primaryColor : secondaryColor,
-                          width: 2,
+                          width: 1,
                         ),
                         boxShadow: isCurrent ? [
                           BoxShadow(

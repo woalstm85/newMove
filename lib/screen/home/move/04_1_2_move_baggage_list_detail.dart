@@ -935,9 +935,14 @@ class _BaggageDetailScreenState extends ConsumerState<BaggageDetailScreen> {
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 5,
+            spreadRadius: 0,
             offset: Offset(0, 2),
           ),
         ],
+        border: Border.all(
+          color: AppTheme.borderSubColor,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1116,6 +1121,10 @@ class _BaggageDetailScreenState extends ConsumerState<BaggageDetailScreen> {
                           offset: Offset(0, 2),
                         ),
                       ],
+                      border: Border.all(
+                        color: AppTheme.borderSubColor,
+                        width: 1,
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1127,6 +1136,7 @@ class _BaggageDetailScreenState extends ConsumerState<BaggageDetailScreen> {
                               decoration: BoxDecoration(
                                 color: _primaryColor.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
+
                               ),
                               child: Icon(
                                 Icons.inventory_2_outlined,

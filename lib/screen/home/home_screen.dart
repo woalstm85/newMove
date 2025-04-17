@@ -17,6 +17,8 @@ import 'package:MoveSmart/screen/home/review/api/review_api_service.dart'; //리
 import 'package:MoveSmart/screen/partner/api/partner_api_service.dart'; //파트너 api
 import 'package:MoveSmart/screen/partner/api/mock_data.dart'; //모의 데이타
 
+import 'package:MoveSmart/modal_banner_slider.dart'; // 만든 모달 배너 슬라이더
+
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic> preloadedData;
 
@@ -54,6 +56,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 미리 로드된 데이터 사용 및 필요 시 API 호출
     _initializeData();
+
+    // 모달 배너 표시 (약간의 지연 후 표시)
+    _showModalBanner();
+  }
+
+  // 모달 배너 표시 메서드 추가
+  Future<void> _showModalBanner() async {
+    // UI가 완전히 로드된 후 모달을 표시하기 위해 약간의 지연
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // 마운트 상태 확인
+    if (mounted) {
+      // 별도의 파일에 정의된 모달 배너 표시 함수 호출
+      ModalBannerSlider.show(context);
+    }
   }
 
   // 데이터 초기화 메서드 (preloadedData + 추가 로드)

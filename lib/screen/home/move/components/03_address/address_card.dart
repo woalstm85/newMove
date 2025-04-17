@@ -28,20 +28,22 @@ class AddressCard extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(context.defaultPadding),
         decoration: BoxDecoration(
-          color: details != null ? primaryColor.withOpacity(0.03) : Colors.white,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: details != null ? primaryColor.withOpacity(0.2) : AppTheme.borderColor,
-            width: 1.5,
+            color: AppTheme.borderSubColor,
+            width: 1,
           ),
           boxShadow: details != null
               ? [
             BoxShadow(
               color: primaryColor.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              blurRadius: 5,
+              spreadRadius: 0,
+              offset: const Offset(0, 2),
             ),
           ]
+
               : null,
         ),
         child: Column(
@@ -152,7 +154,7 @@ class AddressCard extends StatelessWidget {
       padding: EdgeInsets.all(context.smallPadding),
       decoration: BoxDecoration(
         color: primaryColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: primaryColor.withOpacity(0.3),
           width: 1,

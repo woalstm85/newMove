@@ -119,6 +119,9 @@ flutter:
     - assets/banners/banner1.png
     - assets/banners/banner2.png
     - assets/banners/banner3.png
+    - assets/images/banners/large_banner1.png
+    - assets/images/banners/large_banner2.png
+    - assets/images/banners/large_banner3.png
     - assets/service_account_key.json
     - .env
   uses-material-design: true

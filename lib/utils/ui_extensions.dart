@@ -202,3 +202,24 @@ extension CardDecorationExtension on BuildContext {
     ),
   );
 }
+
+extension PhoneNumberExtension on String {
+  // 전화번호 포맷팅 메서드
+  String formatPhoneNumber() {
+    // 숫자만 추출
+    String digits = replaceAll(RegExp(r'\D'), '');
+
+    // 번호가 11자리(010으로 시작)인지 확인
+    if (digits.length == 11 && digits.startsWith('010')) {
+      return '${digits.substring(0, 3)}-${digits.substring(3, 7)}-${digits.substring(7)}';
+    }
+
+    // 10자리 번호의 경우 (예: 지역번호 포함)
+    if (digits.length == 10) {
+      return '${digits.substring(0, 3)}-${digits.substring(3, 6)}-${digits.substring(6)}';
+    }
+
+    // 포맷팅이 불가능한 경우 원래 문자열 반환
+    return this;
+  }
+}
