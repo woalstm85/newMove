@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
-import 'package:MoveSmart/api_service.dart';
+import 'package:MoveSmart/services/api_service.dart';
 import 'partner_detail_intro.dart';
 import 'partner_detail_review.dart';
 import 'partner_detail_busi.dart';

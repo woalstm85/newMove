@@ -1,4 +1,4 @@
-import 'package:MoveSmart/api_service.dart';
+import 'package:MoveSmart/services/api_service.dart';
 import 'package:flutter/cupertino.dart';
 
 class PartnerService {

@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:MoveSmart/api_service.dart';
+import 'package:MoveSmart/services/api_service.dart';
 
 class AddressService {
   /// 행정안전부 주소 검색 API URL

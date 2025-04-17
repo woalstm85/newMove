@@ -1,3 +1,4 @@
+import 'package:MoveSmart/screen/home/move/02_2_storage_calendar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
@@ -181,12 +182,23 @@ class _SpecialMoveTypeModalState extends ConsumerState<SpecialMoveTypeModal> {
                   child: ElevatedButton(
                     onPressed: selectedMoveType != null
                         ? () {
-                      // 다음 단계로 이동
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => CalendarScreen(isRegularMove: false)),
-                      );
+                      // 보관이사 유형이면 StorageCalendarScreen으로 이동
+                      if (selectedMoveType == 'storage_move') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const StorageCalendarScreen(),
+                          ),
+                        );
+                      } else {
+                        // 다른 특수이사 유형은 일반 CalendarScreen으로 이동
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CalendarScreen(isRegularMove: false),
+                          ),
+                        );
+                      }
                     }
                         : null,
                     style: ElevatedButton.styleFrom(

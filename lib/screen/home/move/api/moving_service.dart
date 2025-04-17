@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
-import 'package:MoveSmart/api_service.dart';
+import 'package:MoveSmart/services/api_service.dart';
 
 class MovingService {
   static const String _baseUrl = "http://moving.stst.co.kr/api/api";

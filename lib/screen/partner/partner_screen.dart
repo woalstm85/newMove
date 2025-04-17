@@ -1,6 +1,6 @@
 import 'package:MoveSmart/screen/partner/API/partner_api_service.dart';
 import 'package:flutter/material.dart';
-import 'package:MoveSmart/api_service.dart';
+import 'package:MoveSmart/services/api_service.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
 import 'modal/partner_sort.dart';
 import 'modal/partner_region.dart';
