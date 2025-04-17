@@ -25,10 +25,10 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.preloadedData});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  HomeScreenState createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _currentPage = 0;
   late PageController _pageController;
   late Timer _timer;
@@ -40,6 +40,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // 앱 상태 관찰자 등록
+    WidgetsBinding.instance.addObserver(this);
 
     // 무한 스크롤을 위해 큰 숫자의 중간에서 시작
     int initialPage = 5000;
@@ -59,6 +61,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 모달 배너 표시 (약간의 지연 후 표시)
     _showModalBanner();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 경로가 변경될 때마다 호출될 수 있으므로, 필요한 경우 여기서도 처리 가능
+  }
+
+  // 앱 상태 변경 감지 (화면이 포커스를 얻을 때마다 호출)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // 앱이 다시 활성화 됐을 때 모달 표시 플래그 재설정
+      ModalBannerSlider.resetSessionFlag();
+      // 모달을 다시 표시
+      _showModalBanner();
+    }
   }
 
   // 모달 배너 표시 메서드 추가
@@ -142,6 +161,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    // 앱 상태 관찰자 해제
+    WidgetsBinding.instance.removeObserver(this);
     _timer.cancel();
     _pageController.dispose();
     super.dispose();

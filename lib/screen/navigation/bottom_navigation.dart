@@ -1,10 +1,11 @@
+import 'package:MoveSmart/modal_banner_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../home/home_screen.dart';
+import 'package:MoveSmart/screen/home/home_screen.dart';
 import 'package:MoveSmart/screen/partner/partner_screen.dart';
-import '../login/login_screen.dart';
-import '../my_usage_history_screen.dart';
-import '../more/more_screen.dart';
+import 'package:MoveSmart/screen/login/login_screen.dart';
+import 'package:MoveSmart/screen/my_usage_history_screen.dart';
+import 'package:MoveSmart/screen/more/more_screen.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
 import 'package:MoveSmart/services/naver_auth_service.dart';
 import 'package:MoveSmart/services/kakao_auth_service.dart';
@@ -36,10 +37,13 @@ class _BottomNavigationBarWidgetState extends ConsumerState<BottomNavigationBarW
   final KakaoAuthService _kakaoAuthService = KakaoAuthService();
   bool _isKakaoLoggedIn = false;
 
+  int _previousIndex = 0; // 이전 인덱스 추적
+
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _previousIndex = _selectedIndex;
     _signInSilently();
   }
 
@@ -105,8 +109,24 @@ class _BottomNavigationBarWidgetState extends ConsumerState<BottomNavigationBarW
       });
     }
   }
+
   void _onItemTapped(int index) {
+    // 홈 탭으로 이동하는 경우 (이전 탭이 홈이 아닐 경우에만)
+    if (index == 0 && _selectedIndex != 0) {
+      // 홈으로 돌아왔을 때 세션 플래그 초기화
+      ModalBannerSlider.resetSessionFlag();
+
+      // 약간의 지연 후 모달 표시 (UI가 전환된 후)
+      Future.delayed(const Duration(milliseconds: 100), () {
+        // 직접 모달 표시 함수 호출
+        if (context.mounted) {
+          ModalBannerSlider.show(context);
+        }
+      });
+    }
+
     setState(() {
+      _previousIndex = _selectedIndex; // 이전 인덱스 저장
       _selectedIndex = index; // 선택된 탭의 인덱스 업데이트
     });
   }
@@ -124,6 +144,7 @@ class _BottomNavigationBarWidgetState extends ConsumerState<BottomNavigationBarW
       body: IndexedStack(
         index: _selectedIndex,
         children: [
+          // HomeScreen 인스턴스 생성 (GlobalKey 없이)
           HomeScreen(preloadedData: widget.preloadedData),
           const PartnerSearchScreen(),
 
@@ -146,11 +167,11 @@ class _BottomNavigationBarWidgetState extends ConsumerState<BottomNavigationBarW
         backgroundColor: Colors.white, // 흰색 배경
         selectedItemColor: AppTheme.primaryColor, // 선택된 아이템 색상
         unselectedItemColor: AppTheme.secondaryText, // 선택되지 않은 아이템 색상
-        selectedLabelStyle: TextStyle(
+        selectedLabelStyle: const TextStyle(
           fontWeight: FontWeight.bold, // 선택된 라벨 볼드처리
           fontSize: 12,
         ),
-        unselectedLabelStyle: TextStyle(
+        unselectedLabelStyle: const TextStyle(
           fontSize: 12,
         ),
 

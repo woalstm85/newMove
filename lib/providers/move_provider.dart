@@ -36,6 +36,15 @@ class MoveData {
   // 추가 설명
   String? additionalNotes;
 
+  // 보관이사 관련 추가 필드
+  DateTime? storageStartDate;     // 보관 시작일 (보관소로 이삿짐을 옮기는 날짜)
+  String? storageStartTime;       // 보관 시작 시간
+  DateTime? storageEndDate;       // 보관 종료일 (보관소에서 새 집으로 이삿짐을 옮기는 날짜)
+  String? storageEndTime;         // 보관 종료 시간
+  int? storageDuration;           // 보관 기간 (월 단위)
+
+
+
   MoveData({
     this.selectedMoveType,
     this.selectedDate,
@@ -43,6 +52,11 @@ class MoveData {
     this.startAddressDetails,
     this.destinationAddressDetails,
     this.additionalNotes,
+    this.storageStartDate,
+    this.storageStartTime,
+    this.storageEndDate,
+    this.storageEndTime,
+    this.storageDuration,
   });
 
   bool get hasSelectedDate => selectedDate != null;
@@ -56,9 +70,27 @@ class MoveData {
   bool canProceedToBaggage() => hasStartAddress && hasDestinationAddress;
   bool canSubmitEstimate() => selectedBaggageItems.isNotEmpty;
 
+  // 보관이사 날짜 관련 추가 getter
+  bool get hasStorageStartDate => storageStartDate != null;
+  bool get hasStorageStartTime => storageStartTime != null;
+  bool get hasStorageEndDate => storageEndDate != null;
+  bool get hasStorageEndTime => storageEndTime != null;
+
   // 이삿짐 입력 방식 관련 데이터
   bool isPhotoSelected = false;
   bool isListSelected = false;
+
+  // 다음 단계 진행 가능 여부 확인 메서드 수정
+  bool canProceedFromStorageCalendar() {
+    if (selectedMoveType == 'storage_move') {
+      return hasStorageStartDate &&
+          hasStorageStartTime &&
+          hasStorageEndDate &&
+          hasStorageEndTime &&
+          storageDuration != null;
+    }
+    return hasSelectedDate && hasSelectedTime;
+  }
 
   // 방 사진 관련 데이터
   List<String> roomTypes = []; // 방 종류 목록
@@ -94,6 +126,12 @@ class MoveData {
     List<String>? selectedTemplates,
     String? selectedServiceType,
     List<String>? attachedPhotos,
+    // 추가 필드들
+    DateTime? storageStartDate,
+    String? storageStartTime,
+    DateTime? storageEndDate,
+    String? storageEndTime,
+    int? storageDuration,
   }) {
     return MoveData(
       selectedMoveType: selectedMoveType ?? this.selectedMoveType,
@@ -102,6 +140,12 @@ class MoveData {
       startAddressDetails: startAddressDetails ?? this.startAddressDetails,
       destinationAddressDetails: destinationAddressDetails ?? this.destinationAddressDetails,
       additionalNotes: additionalNotes ?? this.additionalNotes,
+      // 추가 필드들
+      storageStartDate: storageStartDate ?? this.storageStartDate,
+      storageStartTime: storageStartTime ?? this.storageStartTime,
+      storageEndDate: storageEndDate ?? this.storageEndDate,
+      storageEndTime: storageEndTime ?? this.storageEndTime,
+      storageDuration: storageDuration ?? this.storageDuration,
     )
       ..selectedBaggageItems = selectedBaggageItems ?? this.selectedBaggageItems
       ..isPhotoSelected = isPhotoSelected ?? this.isPhotoSelected
@@ -113,7 +157,7 @@ class MoveData {
       ..selectedMemoCategory = selectedMemoCategory ?? this.selectedMemoCategory
       ..selectedTemplates = selectedTemplates ?? this.selectedTemplates
       ..selectedServiceType = selectedServiceType ?? this.selectedServiceType
-      ..attachedPhotos = attachedPhotos ?? this.attachedPhotos; // 추가
+      ..attachedPhotos = attachedPhotos ?? this.attachedPhotos;
   }
 }
 
@@ -199,6 +243,7 @@ class MoveNotifier extends StateNotifier<MoveState> {
         _loadMemoData(),
         _loadServiceType(),
         _loadAttachedPhotos(),
+        _loadStorageData(),
       ]);
       _initialized = true;
     } catch (e) {
@@ -714,4 +759,99 @@ class MoveNotifier extends StateNotifier<MoveState> {
       );
     }
   }
+
+  // 보관 시작일 설정
+  Future<void> setStorageStartDate(DateTime date) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = '${_keyPrefix}storageStartDate';
+    final value = date.toIso8601String();
+
+    debugPrint('보관 시작일 저장: 키=$key, 값=$value');
+    await prefs.setString(key, value);
+
+    state = state.copyWith(
+        moveData: state.moveData.copyWith(storageStartDate: date)
+    );
+  }
+
+  // 보관 시작 시간 설정
+  Future<void> setStorageStartTime(String time) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('${_keyPrefix}storageStartTime', time);
+
+    state = state.copyWith(
+        moveData: state.moveData.copyWith(storageStartTime: time)
+    );
+  }
+
+  // 보관 종료일(배송일) 설정
+  Future<void> setStorageEndDate(DateTime date) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = '${_keyPrefix}storageEndDate';
+    final value = date.toIso8601String();
+
+    debugPrint('보관 종료일 저장: 키=$key, 값=$value');
+    await prefs.setString(key, value);
+
+    state = state.copyWith(
+        moveData: state.moveData.copyWith(storageEndDate: date)
+    );
+  }
+
+  // 보관 종료 시간 설정
+  Future<void> setStorageEndTime(String time) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('${_keyPrefix}storageEndTime', time);
+
+    state = state.copyWith(
+        moveData: state.moveData.copyWith(storageEndTime: time)
+    );
+  }
+
+  // 보관 기간 설정
+  Future<void> setStorageDuration(int months) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('${_keyPrefix}storageDuration', months);
+
+    state = state.copyWith(
+        moveData: state.moveData.copyWith(storageDuration: months)
+    );
+  }
+
+  // 보관이사 관련 데이터 로드 (_loadAllData 메소드에 추가)
+  Future<void> _loadStorageData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // 보관 시작일 로드
+    final savedStartDateStr = prefs.getString('${_keyPrefix}storageStartDate');
+    final savedStartTime = prefs.getString('${_keyPrefix}storageStartTime');
+
+    // 보관 종료일 로드
+    final savedEndDateStr = prefs.getString('${_keyPrefix}storageEndDate');
+    final savedEndTime = prefs.getString('${_keyPrefix}storageEndTime');
+
+    // 보관 기간 로드
+    final storageDuration = prefs.getInt('${_keyPrefix}storageDuration');
+
+    DateTime? startDate;
+    if (savedStartDateStr != null) {
+      startDate = DateTime.parse(savedStartDateStr);
+    }
+
+    DateTime? endDate;
+    if (savedEndDateStr != null) {
+      endDate = DateTime.parse(savedEndDateStr);
+    }
+
+    state = state.copyWith(
+        moveData: state.moveData.copyWith(
+          storageStartDate: startDate,
+          storageStartTime: savedStartTime,
+          storageEndDate: endDate,
+          storageEndTime: savedEndTime,
+          storageDuration: storageDuration,
+        )
+    );
+  }
+
 }
