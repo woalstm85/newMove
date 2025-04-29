@@ -28,7 +28,7 @@ class StorySlider extends StatelessWidget {
   // 로딩 상태 UI
   Widget _buildLoadingState() {
     return Container(
-      height: 250,
+      height: 260,
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(
         child: Column(
@@ -55,7 +55,7 @@ class StorySlider extends StatelessWidget {
   // 스토리 없음 상태 UI
   Widget _buildEmptyState() {
     return Container(
-      height: 250,
+      height: 260,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
@@ -104,7 +104,7 @@ class StorySlider extends StatelessWidget {
   // 스토리 리스트 UI
   Widget _buildStoryList(BuildContext context) {
     return SizedBox(
-      height: 250,
+      height: 260,
       child: ListView.builder(
         padding: EdgeInsets.zero,
         scrollDirection: Axis.horizontal,

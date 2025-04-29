@@ -31,30 +31,27 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _currentPage = 0;
   late PageController _pageController;
-  late Timer _timer;
+  Timer? _timer; // nullable로 변경
   bool _isLoading = true;
   List<dynamic> _reviews = [];
   List<dynamic> _partners = [];
   List<dynamic> _stories = [];
 
+  // 사용자 상호작용 관련 변수 추가
+  bool _userInteracting = false;
+  Timer? _interactionTimer;
+
   @override
   void initState() {
     super.initState();
-    // 앱 상태 관찰자 등록
-    WidgetsBinding.instance.addObserver(this);
 
     // 무한 스크롤을 위해 큰 숫자의 중간에서 시작
     int initialPage = 5000;
     _pageController = PageController(initialPage: initialPage);
     _currentPage = initialPage % 3; // 3은 배너의 총 개수
 
-    // 5초마다 배너 페이지를 자동으로 전환
-    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
-      _pageController.nextPage(
-        duration: AppTheme.animationDuration, // 애니메이션 지속시간
-        curve: AppTheme.animationCurve,
-      );
-    });
+    // 배너 자동 전환 타이머 시작
+    _startBannerTimer();
 
     // 미리 로드된 데이터 사용 및 필요 시 API 호출
     _initializeData();
@@ -63,21 +60,45 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _showModalBanner();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // 경로가 변경될 때마다 호출될 수 있으므로, 필요한 경우 여기서도 처리 가능
+  // 타이머 시작 함수 추가
+  void _startBannerTimer() {
+    // 기존 타이머가 있으면 취소
+    _timer?.cancel();
+
+    // 새 타이머 시작
+    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
+      if (_pageController.hasClients && !_userInteracting) {
+        _pageController.nextPage(
+          duration: AppTheme.animationDuration, // 애니메이션 지속시간
+          curve: AppTheme.animationCurve,
+        );
+      }
+    });
   }
 
-  // 앱 상태 변경 감지 (화면이 포커스를 얻을 때마다 호출)
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // 앱이 다시 활성화 됐을 때 모달 표시 플래그 재설정
-      ModalBannerSlider.resetSessionFlag();
-      // 모달을 다시 표시
-      _showModalBanner();
-    }
+  // 사용자 상호작용 시작 처리 함수
+  void _handleUserInteractionStart() {
+    setState(() {
+      _userInteracting = true;
+    });
+
+    // 기존 인터랙션 타이머가 있으면 취소
+    _interactionTimer?.cancel();
+  }
+
+  // 사용자 상호작용 종료 처리 함수
+  void _handleUserInteractionEnd() {
+    // 상호작용 종료 후 3초 후에 자동 슬라이드 재개
+    _interactionTimer?.cancel();
+    _interactionTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _userInteracting = false;
+        });
+        // 타이머 재시작
+        _startBannerTimer();
+      }
+    });
   }
 
   // 모달 배너 표시 메서드 추가
@@ -87,7 +108,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     // 마운트 상태 확인
     if (mounted) {
-      // 별도의 파일에 정의된 모달 배너 표시 함수 호출
+      // 싱글톤 인스턴스를 통해 모달 배너 표시
+      // 싱글톤 패턴으로 구현되어 있어 한 세션에서 한 번만 표시됨
       ModalBannerSlider.show(context);
     }
   }
@@ -163,7 +185,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void dispose() {
     // 앱 상태 관찰자 해제
     WidgetsBinding.instance.removeObserver(this);
-    _timer.cancel();
+    _timer?.cancel();
+    _interactionTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -440,14 +463,23 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-        child: BannerSection(
-          currentPage: _currentPage,
-          pageController: _pageController,
-          onPageChanged: (int page) {
-            setState(() {
-              _currentPage = page;
-            });
-          },
+        child: GestureDetector(
+          // 사용자 상호작용 감지
+          onPanDown: (_) => _handleUserInteractionStart(),
+          onPanEnd: (_) => _handleUserInteractionEnd(),
+          onPanCancel: () => _handleUserInteractionEnd(),
+          child: BannerSection(
+            currentPage: _currentPage,
+            pageController: _pageController,
+            onPageChanged: (int page) {
+              setState(() {
+                _currentPage = page;
+              });
+              // 사용자가 페이지를 변경했을 때도 상호작용으로 간주
+              _handleUserInteractionStart();
+              _handleUserInteractionEnd();
+            },
+          ),
         ),
       ),
     );

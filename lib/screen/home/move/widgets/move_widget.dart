@@ -29,11 +29,11 @@ class MoveButton extends StatelessWidget {
   Widget build(BuildContext context) {
     // 스크린 너비에 따라 조정
     final screenWidth = MediaQuery.of(context).size.width;
-    final cardPadding = screenWidth < 400 ? 16.0 : 20.0;
-    final iconSize = screenWidth < 400 ? 22.0 : 26.0;
-    final titleSize = screenWidth < 400 ? 20.0 : 24.0;
-    final subtitleSize = screenWidth < 400 ? 14.0 : 16.0;
-    final buttonTextSize = screenWidth < 400 ? 13.0 : 15.0;
+    final cardPadding = screenWidth < 400 ? 16.0 : 16.0;
+    final iconSize = screenWidth < 400 ? 22.0 : 22.0;
+    final titleSize = screenWidth < 400 ? 20.0 : 20.0;
+    final subtitleSize = screenWidth < 400 ? 14.0 : 14.0;
+    final buttonTextSize = screenWidth < 400 ? 13.0 : 13.0;
 
     return GestureDetector(
       onTap: onTap,

@@ -55,7 +55,7 @@ dependencies:
   flutter_naver_login: ^1.8.0
   kakao_flutter_sdk: ^1.9.6
   cached_network_image: ^3.4.1
-
+  package_info_plus: ^8.3.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -103,25 +103,21 @@ flutter_native_splash:
 flutter:
 
   assets:
-    - assets/images/rinfo.png
+    - assets/images/
+    - assets/banners/
+    - assets/images/banners/
+    - assets/icon/
+
     - assets/images/google_login_icon.png
     - assets/images/naver_login_icon.png
     - assets/images/kakao_login_icon.png
+
     - assets/Third_Party_Consent.txt
     - assets/Marketing_Consent.txt
     - assets/terms_of_service.txt
     - assets/review_policy.txt
     - assets/privacy_policy.txt
-    - assets/images/normal_moving.png
-    - assets/images/semi_package.png
-    - assets/images/package_moving.png
-    - assets/splash/splash_icon.png
-    - assets/banners/banner1.png
-    - assets/banners/banner2.png
-    - assets/banners/banner3.png
-    - assets/images/banners/large_banner1.png
-    - assets/images/banners/large_banner2.png
-    - assets/images/banners/large_banner3.png
+    - assets/splash/
     - assets/service_account_key.json
     - .env
   uses-material-design: true

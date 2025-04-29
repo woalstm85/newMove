@@ -26,7 +26,7 @@ class BottomBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 100, // 메인 배너 높이(200)의 절반
+      height: 120, // 메인 배너 높이(200)의 절반
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: GestureDetector(
         onTap: _launchURL,

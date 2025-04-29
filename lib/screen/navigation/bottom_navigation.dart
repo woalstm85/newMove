@@ -111,20 +111,6 @@ class _BottomNavigationBarWidgetState extends ConsumerState<BottomNavigationBarW
   }
 
   void _onItemTapped(int index) {
-    // 홈 탭으로 이동하는 경우 (이전 탭이 홈이 아닐 경우에만)
-    if (index == 0 && _selectedIndex != 0) {
-      // 홈으로 돌아왔을 때 세션 플래그 초기화
-      ModalBannerSlider.resetSessionFlag();
-
-      // 약간의 지연 후 모달 표시 (UI가 전환된 후)
-      Future.delayed(const Duration(milliseconds: 100), () {
-        // 직접 모달 표시 함수 호출
-        if (context.mounted) {
-          ModalBannerSlider.show(context);
-        }
-      });
-    }
-
     setState(() {
       _previousIndex = _selectedIndex; // 이전 인덱스 저장
       _selectedIndex = index; // 선택된 탭의 인덱스 업데이트

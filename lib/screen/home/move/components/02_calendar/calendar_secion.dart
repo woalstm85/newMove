@@ -103,12 +103,12 @@ class CalendarSection extends StatelessWidget {
       weekdayStyle: TextStyle(
         color: AppTheme.secondaryText,
         fontWeight: FontWeight.w600,
-        fontSize: context.scaledFontSize(12),
+        fontSize: context.scaledFontSize(10),
       ),
       weekendStyle: TextStyle(
         color: Colors.redAccent.shade100,
         fontWeight: FontWeight.w600,
-        fontSize: context.scaledFontSize(12),
+        fontSize: context.scaledFontSize(10),
       ),
       dowTextFormatter: (date, locale) {
         switch (date.weekday) {
@@ -132,7 +132,7 @@ class CalendarSection extends StatelessWidget {
         String? status = visibleMonthMovStatus[formattedDate] ?? allMovStatus[formattedDate];
 
         return Container(
-          margin: const EdgeInsets.all(4),
+
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

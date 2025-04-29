@@ -20,7 +20,7 @@ class BannerSection extends StatelessWidget {
     final List<BannerModel> banners = BannerModel.fromJsonList(bannersData);
 
     return SizedBox(
-      height: 200,
+      height: 220,
       child: Stack(
         children: [
           // 배너 슬라이더

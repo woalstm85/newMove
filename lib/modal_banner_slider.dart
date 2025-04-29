@@ -23,7 +23,7 @@ class ModalBannerSlider {
     },
   ];
 
-  // 현재 세션에서 모달이 표시되었는지 추적하는 정적 변수 추가
+  // 현재 세션에서 모달이 표시되었는지 추적하는 정적 변수
   static bool _hasShownInCurrentSession = false;
 
   // 모달 표시 여부 확인
@@ -37,17 +37,20 @@ class ModalBannerSlider {
       return false;
     }
 
-    // 단순 닫기를 누른 후에는 화면 이동 후 다시 표시되도록 하기 위해
-    // 현재 세션에서 이미 표시된 경우를 체크하지 않음 (항상 true 반환)
+    // 세션 내 중복 표시 방지
+    if (_hasShownInCurrentSession) {
+      return false;
+    }
+
     return true;
   }
 
-  // 모달이 표시되었는지 확인하는 메서드 추가
+  // 모달이 표시되었는지 확인하는 메서드
   static bool hasShownInCurrentSession() {
     return _hasShownInCurrentSession;
   }
 
-  // 현재 세션에서 모달 표시 상태 초기화 (화면 이동 시 호출)
+  // 현재 세션에서 모달 표시 상태 초기화 (필요 시 호출)
   static void resetSessionFlag() {
     _hasShownInCurrentSession = false;
   }
@@ -64,9 +67,6 @@ class ModalBannerSlider {
     // 표시 여부 확인
     if (!await shouldShowBanner()) return;
 
-    // 이미 현재 세션에서 표시되었다면 또 표시하지 않음
-    if (_hasShownInCurrentSession) return;
-
     // 화면이 마운트된 상태인지 확인
     if (!context.mounted) return;
 
@@ -77,16 +77,13 @@ class ModalBannerSlider {
     final PageController pageController = PageController(initialPage: 0);
     int currentPage = 0;
 
-    // 디바이스의 하단 여백 계산 (안전 영역)
-    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       // 바텀 시트가 스크린 위쪽까지 확장되는 것을 막음 (높이 축소)
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.5, // 70%에서 50%로 축소
+        maxHeight: MediaQuery.of(context).size.height * 0.5,
       ),
       builder: (BuildContext context) {
         return SafeArea(
