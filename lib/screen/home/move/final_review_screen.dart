@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 import 'package:MoveSmart/screen/home/move/move_progress_bar.dart';
+import 'package:MoveSmart/screen/history/history_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,27 +63,53 @@ class _FinalReviewScreenState extends ConsumerState<FinalReviewScreen> with Move
     // 기본값
     return '이사 유형 정보 없음';
   }
-
-  // 견적 요청 처리
+  
+// 견적 요청 처리
   void _requestEstimate() {
     setState(() {
       isRequestingEstimate = true;
     });
 
-    // 실제 견적 요청 API 호출 로직을 여기에 구현
-    Future.delayed(const Duration(seconds: 2), () {
-      // 성공 또는 실패 처리
+    // 견적 요청 ID 생성 (실제 서비스에서는 서버에서 제공)
+    final String requestId = 'EST${DateFormat('yyMMdd').format(DateTime.now())}${Random().nextInt(1000).toString().padLeft(3, '0')}';
+
+    // 현재 날짜
+    final String currentDate = DateFormat('yyyy.MM.dd').format(DateTime.now());
+
+    // 견적 요청 객체 생성
+    final EstimateRequest newRequest = EstimateRequest(
+      id: requestId,
+      status: '진행중',  // 초기 상태
+      date: currentDate,
+      isRegularMove: widget.isRegularMove,
+    );
+
+    // 견적 요청 추가
+    ref.read(estimateRequestsProvider.notifier).addRequest(newRequest).then((_) {
+      // 성공 메시지 및 다음 화면으로 이동
+      setState(() {
+        isRequestingEstimate = false;
+      });
+      _showSuccessDialog(requestId);
+    }).catchError((e) {
+      // 실패 처리
       setState(() {
         isRequestingEstimate = false;
       });
 
-      // 성공 메시지 및 다음 화면으로 이동
-      _showSuccessDialog();
+      // 실패 메시지
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('견적 요청 중 오류가 발생했습니다. 다시 시도해주세요.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     });
   }
 
   // 성공 다이얼로그 표시
-  void _showSuccessDialog() {
+// 성공 다이얼로그 표시
+  void _showSuccessDialog(String requestId) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -109,15 +136,63 @@ class _FinalReviewScreenState extends ConsumerState<FinalReviewScreen> with Move
             ),
           ],
         ),
-        content: Text(
-          '전문가가 검토 후 빠른 시간 내에 견적을 보내드립니다. 감사합니다.',
-          style: TextStyle(
-            fontSize: context.scaledFontSize(14),
-            color: AppTheme.secondaryText,
-          ),
-          textAlign: TextAlign.center,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '전문가가 검토 후 빠른 시간 내에 견적을 보내드립니다. 감사합니다.',
+              style: TextStyle(
+                fontSize: context.scaledFontSize(14),
+                color: AppTheme.secondaryText,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8),
+            Text(
+              '견적번호: $requestId',
+              style: TextStyle(
+                fontSize: context.scaledFontSize(12),
+                color: AppTheme.secondaryText,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
         actions: [
+          // 이용내역 확인 버튼 추가
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: OutlinedButton(
+              onPressed: () {
+                // 성공 다이얼로그 닫기
+                Navigator.pop(context);
+                // 이용내역 화면으로 이동
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MyUsageHistoryScreen(userEmail: 'user@example.com'),
+                  ),
+                );
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: widget.isRegularMove ? primaryColor : AppTheme.greenColor,
+                side: BorderSide(color: widget.isRegularMove ? primaryColor : AppTheme.greenColor),
+                padding: EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                '이용내역 확인하기',
+                style: TextStyle(
+                  fontSize: context.scaledFontSize(16),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),

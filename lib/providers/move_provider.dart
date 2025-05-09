@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 
 // 일반 이사 Provider
 final regularMoveProvider = StateNotifierProvider<MoveNotifier, MoveState>((ref) {
@@ -13,6 +14,158 @@ final specialMoveProvider = StateNotifierProvider<MoveNotifier, MoveState>((ref)
   return MoveNotifier(isRegularMove: false);
 });
 
+// ====================== 견적 요청 관리 기능 추가 ======================
+
+// 견적 요청 클래스
+class EstimateRequest {
+  final String id;
+  final String status;
+  final String date;
+  final bool isRegularMove;
+  final String? price;
+
+  EstimateRequest({
+    required this.id,
+    required this.status,
+    required this.date,
+    required this.isRegularMove,
+    this.price,
+  });
+
+  Color get statusColor {
+    if (status == '진행중') return Colors.blue;
+    if (status == '견적 완료' || status == '결제완료') return Colors.green;
+    if (status == '취소' || status == '만료') return Colors.red;
+    return Colors.grey;
+  }
+
+  // JSON 변환을 위한 메서드
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'status': status,
+      'date': date,
+      'isRegularMove': isRegularMove,
+      'price': price,
+    };
+  }
+
+  // JSON에서 객체 생성을 위한 팩토리 메서드
+  factory EstimateRequest.fromJson(Map<String, dynamic> json) {
+    return EstimateRequest(
+      id: json['id'],
+      status: json['status'],
+      date: json['date'],
+      isRegularMove: json['isRegularMove'],
+      price: json['price'],
+    );
+  }
+}
+
+// 견적 요청 상태 클래스
+class EstimateRequestsState {
+  final List<EstimateRequest> requests;
+  final bool isLoading;
+
+  EstimateRequestsState({
+    required this.requests,
+    this.isLoading = false,
+  });
+
+  EstimateRequestsState copyWith({
+    List<EstimateRequest>? requests,
+    bool? isLoading,
+  }) {
+    return EstimateRequestsState(
+      requests: requests ?? this.requests,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
+}
+
+// 견적 요청 관리를 위한 StateNotifier
+class EstimateRequestsNotifier extends StateNotifier<EstimateRequestsState> {
+  EstimateRequestsNotifier() : super(EstimateRequestsState(requests: [])) {
+    // 초기화 시 데이터 로드
+    loadRequests();
+  }
+
+  // 견적 요청 목록 로드
+  Future<void> loadRequests() async {
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final requestsJson = prefs.getString('estimate_requests');
+
+      if (requestsJson != null) {
+        final List<dynamic> decodedList = jsonDecode(requestsJson);
+        final List<EstimateRequest> requests = decodedList
+            .map((item) => EstimateRequest.fromJson(Map<String, dynamic>.from(item)))
+            .toList();
+
+        state = state.copyWith(requests: requests, isLoading: false);
+      } else {
+        state = state.copyWith(requests: [], isLoading: false);
+      }
+    } catch (e) {
+      debugPrint('견적 요청 데이터 로드 오류: $e');
+      state = state.copyWith(requests: [], isLoading: false);
+    }
+  }
+
+  // 새 견적 요청 추가
+  Future<void> addRequest(EstimateRequest request) async {
+    try {
+      final updatedRequests = [...state.requests, request];
+
+      // 메모리 상태 업데이트
+      state = state.copyWith(requests: updatedRequests);
+
+      // SharedPreferences에 저장
+      final prefs = await SharedPreferences.getInstance();
+      final requestsJson = jsonEncode(updatedRequests.map((r) => r.toJson()).toList());
+      await prefs.setString('estimate_requests', requestsJson);
+    } catch (e) {
+      debugPrint('견적 요청 추가 오류: $e');
+    }
+  }
+
+  // 견적 요청 상태 업데이트
+  Future<void> updateRequestStatus(String id, String newStatus, {String? price}) async {
+    try {
+      final updatedRequests = state.requests.map((request) {
+        if (request.id == id) {
+          return EstimateRequest(
+            id: request.id,
+            status: newStatus,
+            date: request.date,
+            isRegularMove: request.isRegularMove,
+            price: price ?? request.price,
+          );
+        }
+        return request;
+      }).toList();
+
+      // 메모리 상태 업데이트
+      state = state.copyWith(requests: updatedRequests);
+
+      // SharedPreferences에 저장
+      final prefs = await SharedPreferences.getInstance();
+      final requestsJson = jsonEncode(updatedRequests.map((r) => r.toJson()).toList());
+      await prefs.setString('estimate_requests', requestsJson);
+    } catch (e) {
+      debugPrint('견적 요청 상태 업데이트 오류: $e');
+    }
+  }
+}
+
+// 견적 요청 관리를 위한 제공자
+final estimateRequestsProvider = StateNotifierProvider<EstimateRequestsNotifier, EstimateRequestsState>((ref) {
+  return EstimateRequestsNotifier();
+});
+
+// ====================== 기존 이사 데이터 관리 코드 ======================
 
 // 이사 데이터 관리를 위한 모델 클래스
 class MoveData {

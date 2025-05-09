@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:MoveSmart/screen/home/home_screen.dart';
 import 'package:MoveSmart/screen/partner/partner_screen.dart';
 import 'package:MoveSmart/screen/login/login_screen.dart';
-import 'package:MoveSmart/screen/history/my_usage_history_screen.dart';
+import 'package:MoveSmart/screen/history/history_screen.dart';
 import 'package:MoveSmart/screen/more/more_screen.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
 import 'package:MoveSmart/services/naver_auth_service.dart';
