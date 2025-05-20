@@ -10,7 +10,9 @@ class MoveButton extends StatelessWidget {
   final Color secondaryColor;
   final String buttonText;
   final bool isWritingInProgress;
+  final bool isEstimateRequested;
   final VoidCallback onTap;
+  final VoidCallback? onEstimateTap;
 
   const MoveButton({
     super.key,
@@ -22,7 +24,9 @@ class MoveButton extends StatelessWidget {
     required this.secondaryColor,
     required this.buttonText,
     required this.isWritingInProgress,
+    this.isEstimateRequested = false,
     required this.onTap,
+    this.onEstimateTap,
   });
 
   @override
@@ -36,7 +40,7 @@ class MoveButton extends StatelessWidget {
     final buttonTextSize = screenWidth < 400 ? 13.0 : 13.0;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: isEstimateRequested ? onEstimateTap : onTap,
       child: Container(
         height: height,
         decoration: BoxDecoration(
@@ -53,7 +57,7 @@ class MoveButton extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 상단 영역: 이사 아이콘 + 작성 중 배지
+              // 상단 영역: 이사 아이콘 + 작성 중/견적요청중 배지
               Row(
                 mainAxisSize: MainAxisSize.max,
                 children: [
@@ -70,8 +74,8 @@ class MoveButton extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 25),
-                  // 작성 중인 경우에만 배지 표시
-                  if (isWritingInProgress)
+                  // 작성 중 또는 견적요청중 배지 표시
+                  if (isWritingInProgress || isEstimateRequested)
                     Flexible(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -86,13 +90,13 @@ class MoveButton extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.edit_outlined,
+                              isEstimateRequested ? Icons.pending_outlined : Icons.edit_outlined,
                               size: 10,
                               color: Colors.white,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              AppCopy.draftText,
+                              isEstimateRequested ? "견적요청중" : AppCopy.draftText,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w500,
@@ -131,7 +135,7 @@ class MoveButton extends StatelessWidget {
                   ),
                 ),
               const Spacer(),
-              // 하단 버튼 (가운데 정렬)
+              // 하단 버튼 (가운데 정렬) - 상태에 따라 버튼 텍스트 변경
               Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -153,7 +157,7 @@ class MoveButton extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        buttonText,
+                        isEstimateRequested ? "견적요청확인" : isWritingInProgress ? "이어서 작성" : buttonText,
                         style: TextStyle(
                           color: primaryColor,
                           fontWeight: FontWeight.w700,
@@ -162,7 +166,7 @@ class MoveButton extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Icon(
-                        Icons.arrow_forward,
+                        isEstimateRequested ? Icons.visibility : Icons.arrow_forward,
                         size: 16,
                         color: primaryColor,
                       ),

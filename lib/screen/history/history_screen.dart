@@ -67,36 +67,38 @@ class _MyUsageHistoryScreenState extends ConsumerState<MyUsageHistoryScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 상단 필터 탭 (로그인 상태일 때만 표시)
-          if (widget.userEmail != null)
-            Container(
-              color: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: List.generate(_categories.length, (index) {
-                    return _buildFilterTab(index, _categories[index]);
-                  }),
+      body: SafeArea(child:
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 상단 필터 탭 (로그인 상태일 때만 표시)
+            if (widget.userEmail != null)
+              Container(
+                color: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: List.generate(_categories.length, (index) {
+                      return _buildFilterTab(index, _categories[index]);
+                    }),
+                  ),
                 ),
               ),
-            ),
 
-          if (widget.userEmail != null)
-            Divider(height: 1),
+            if (widget.userEmail != null)
+              Divider(height: 1),
 
-          // 메인 콘텐츠
-          Expanded(
-            child: _buildHistoryList(
-              estimateRequestsState.requests,
-              regularMoveState,
-              specialMoveState,
+            // 메인 콘텐츠
+            Expanded(
+              child: _buildHistoryList(
+                estimateRequestsState.requests,
+                regularMoveState,
+                specialMoveState,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

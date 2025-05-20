@@ -6,6 +6,7 @@ import 'package:MoveSmart/screen/home/move/modal/regular_type.dart';
 import 'package:MoveSmart/screen/home/move/modal/special_type.dart';
 import 'widgets/move_widget.dart';
 import 'package:MoveSmart/providers/move_provider.dart';
+import 'package:MoveSmart/screen/home/move/estimate_status_screen.dart';
 
 // StatefulWidget을 ConsumerStatefulWidget으로 변경
 class LeftBox extends ConsumerStatefulWidget {
@@ -21,6 +22,8 @@ class LeftBox extends ConsumerStatefulWidget {
 class _LeftBoxState extends ConsumerState<LeftBox> {
   bool _isRegularMoveInProgress = false;
   bool _isSpecialMoveInProgress = false;
+  bool _isRegularEstimateRequested = false;
+  bool _isSpecialEstimateRequested = false;
 
   @override
   void initState() {
@@ -44,11 +47,30 @@ class _LeftBoxState extends ConsumerState<LeftBox> {
     final hasRegularStartAddress = prefs.getString('regular_startAddress') != null;
     final hasSpecialStartAddress = prefs.getString('special_startAddress') != null;
 
+    // 견적 요청 상태 확인
+    final isRegularEstimateRequested = prefs.getBool('regular_isEstimateRequested') ?? false;
+    final isSpecialEstimateRequested = prefs.getBool('special_isEstimateRequested') ?? false;
+
     setState(() {
       // 간단한 조건: 정보가 하나라도 있으면 작성 중으로 간주
-      _isRegularMoveInProgress = hasRegularMoveType || hasRegularDate || hasRegularStartAddress;
-      _isSpecialMoveInProgress = hasSpecialMoveType || hasSpecialDate || hasSpecialStartAddress;
+      // 단, 견적 요청 중인 경우는 "작성중" 상태가 아님
+      _isRegularMoveInProgress = (hasRegularMoveType || hasRegularDate || hasRegularStartAddress) && !isRegularEstimateRequested;
+      _isSpecialMoveInProgress = (hasSpecialMoveType || hasSpecialDate || hasSpecialStartAddress) && !isSpecialEstimateRequested;
+
+      // 견적 요청 상태 설정
+      _isRegularEstimateRequested = isRegularEstimateRequested;
+      _isSpecialEstimateRequested = isSpecialEstimateRequested;
     });
+  }
+
+// 견적 요청 관련 화면으로 이동하는 메서드
+  void _navigateToEstimateStatus(bool isRegularMove) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EstimateStatusScreen(isRegularMove: isRegularMove),
+      ),
+    );
   }
 
   // 모달 표시 함수 - 코드 재사용 (수정)
@@ -104,7 +126,6 @@ class _LeftBoxState extends ConsumerState<LeftBox> {
 
   @override
   Widget build(BuildContext context) {
-    // 이제 ref 객체를 사용할 수 있습니다
     return Row(
       children: [
         // 일반이사 버튼 (왼쪽)
@@ -120,7 +141,9 @@ class _LeftBoxState extends ConsumerState<LeftBox> {
               secondaryColor: const Color(0xFF6A92FF),
               buttonText: "견적등록",
               isWritingInProgress: _isRegularMoveInProgress,
+              isEstimateRequested: _isRegularEstimateRequested, // 추가
               onTap: () => _showMoveTypeModal(context, const RegularMoveTypeModal()),
+              onEstimateTap: () => _navigateToEstimateStatus(true), // 추가
             ),
           ),
         ),
@@ -138,7 +161,9 @@ class _LeftBoxState extends ConsumerState<LeftBox> {
               secondaryColor: const Color(0xFF26A69A),
               buttonText: "견적등록",
               isWritingInProgress: _isSpecialMoveInProgress,
+              isEstimateRequested: _isSpecialEstimateRequested, // 추가
               onTap: () => _showMoveTypeModal(context, const SpecialMoveTypeModal()),
+              onEstimateTap: () => _navigateToEstimateStatus(false), // 추가
             ),
           ),
         ),

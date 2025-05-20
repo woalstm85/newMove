@@ -189,14 +189,15 @@ class MoveData {
   // 추가 설명
   String? additionalNotes;
 
-  // 보관이사 관련 추가 필드
+  // 보관이사 관련 필드
   DateTime? storageStartDate;     // 보관 시작일 (보관소로 이삿짐을 옮기는 날짜)
   String? storageStartTime;       // 보관 시작 시간
   DateTime? storageEndDate;       // 보관 종료일 (보관소에서 새 집으로 이삿짐을 옮기는 날짜)
   String? storageEndTime;         // 보관 종료 시간
   int? storageDuration;           // 보관 기간 (월 단위)
 
-
+  // 견적 요청 상태
+  bool isEstimateRequested = false;
 
   MoveData({
     this.selectedMoveType,
@@ -210,6 +211,7 @@ class MoveData {
     this.storageEndDate,
     this.storageEndTime,
     this.storageDuration,
+    this.isEstimateRequested = false,
   });
 
   bool get hasSelectedDate => selectedDate != null;
@@ -279,12 +281,12 @@ class MoveData {
     List<String>? selectedTemplates,
     String? selectedServiceType,
     List<String>? attachedPhotos,
-    // 추가 필드들
     DateTime? storageStartDate,
     String? storageStartTime,
     DateTime? storageEndDate,
     String? storageEndTime,
     int? storageDuration,
+    bool? isEstimateRequested,
   }) {
     return MoveData(
       selectedMoveType: selectedMoveType ?? this.selectedMoveType,
@@ -293,12 +295,12 @@ class MoveData {
       startAddressDetails: startAddressDetails ?? this.startAddressDetails,
       destinationAddressDetails: destinationAddressDetails ?? this.destinationAddressDetails,
       additionalNotes: additionalNotes ?? this.additionalNotes,
-      // 추가 필드들
       storageStartDate: storageStartDate ?? this.storageStartDate,
       storageStartTime: storageStartTime ?? this.storageStartTime,
       storageEndDate: storageEndDate ?? this.storageEndDate,
       storageEndTime: storageEndTime ?? this.storageEndTime,
       storageDuration: storageDuration ?? this.storageDuration,
+      isEstimateRequested: isEstimateRequested ?? this.isEstimateRequested,
     )
       ..selectedBaggageItems = selectedBaggageItems ?? this.selectedBaggageItems
       ..isPhotoSelected = isPhotoSelected ?? this.isPhotoSelected
@@ -354,6 +356,31 @@ class MoveNotifier extends StateNotifier<MoveState> {
     _loadAllData();
   }
 
+  // 견적 요청 상태 설정 메서드
+  Future<void> setEstimateRequestStatus(bool isRequested) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('${_keyPrefix}isEstimateRequested', isRequested);
+
+    state = state.copyWith(
+      moveData: state.moveData.copyWith(
+        isEstimateRequested: isRequested,
+      ),
+    );
+    debugPrint('견적 요청 상태 변경: $isRequested');
+  }
+
+  // 견적 요청 상태 로드 메서드 (추가)
+  Future<void> _loadEstimateRequestStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isRequested = prefs.getBool('${_keyPrefix}isEstimateRequested') ?? false;
+
+    state = state.copyWith(
+      moveData: state.moveData.copyWith(
+        isEstimateRequested: isRequested,
+      ),
+    );
+  }
+
   // 데이터 강제 리로드 메서드 추가
   Future<void> forceReload() async {
     if (!_initialized) {
@@ -397,6 +424,7 @@ class MoveNotifier extends StateNotifier<MoveState> {
         _loadServiceType(),
         _loadAttachedPhotos(),
         _loadStorageData(),
+        _loadEstimateRequestStatus(),
       ]);
       _initialized = true;
     } catch (e) {

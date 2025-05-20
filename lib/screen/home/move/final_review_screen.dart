@@ -63,7 +63,7 @@ class _FinalReviewScreenState extends ConsumerState<FinalReviewScreen> with Move
     // 기본값
     return '이사 유형 정보 없음';
   }
-  
+
 // 견적 요청 처리
   void _requestEstimate() {
     setState(() {
@@ -84,13 +84,22 @@ class _FinalReviewScreenState extends ConsumerState<FinalReviewScreen> with Move
       isRegularMove: widget.isRegularMove,
     );
 
-    // 견적 요청 추가
+    // 견적 요청 추가 및 상태 업데이트
     ref.read(estimateRequestsProvider.notifier).addRequest(newRequest).then((_) {
-      // 성공 메시지 및 다음 화면으로 이동
+      // 이사 상태를 '요청중'으로 업데이트
+      if (widget.isRegularMove) {
+        ref.read(regularMoveProvider.notifier).setEstimateRequestStatus(true);
+      } else {
+        ref.read(specialMoveProvider.notifier).setEstimateRequestStatus(true);
+      }
+
+      // 상태 업데이트 및 홈 화면으로 이동
       setState(() {
         isRequestingEstimate = false;
       });
-      _showSuccessDialog(requestId);
+
+      // 홈 화면으로 이동 (다이얼로그 없이)
+      Navigator.of(context).popUntil((route) => route.isFirst);
     }).catchError((e) {
       // 실패 처리
       setState(() {
@@ -99,7 +108,7 @@ class _FinalReviewScreenState extends ConsumerState<FinalReviewScreen> with Move
 
       // 실패 메시지
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('견적 요청 중 오류가 발생했습니다. 다시 시도해주세요.'),
           backgroundColor: Colors.red,
         ),
