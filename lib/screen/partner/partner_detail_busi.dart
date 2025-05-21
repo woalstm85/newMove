@@ -98,7 +98,18 @@ class PartnerBusinessInfoTab extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.all(context.defaultPadding),
-      decoration: context.cardDecoration(borderColor: AppTheme.borderSubColor),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        // Border 설정 제거
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -205,7 +216,18 @@ class PartnerBusinessInfoTab extends StatelessWidget {
       }) {
     return Container(
       padding: EdgeInsets.all(context.defaultPadding),
-      decoration: context.cardDecoration(borderColor: AppTheme.borderSubColor),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        // Border 설정 제거
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -253,7 +275,18 @@ class PartnerBusinessInfoTab extends StatelessWidget {
   Widget _buildCertificationCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(context.defaultPadding),
-      decoration: context.cardDecoration(borderColor: AppTheme.borderSubColor),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        // Border 설정 제거
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

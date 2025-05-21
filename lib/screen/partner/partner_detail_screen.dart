@@ -990,30 +990,6 @@ class _PartnerDetailScreenState extends State<PartnerDetailScreen> with SingleTi
               ),
               onPressed: () => Navigator.pop(context),
             ),
-            actions: [
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.share, color: AppTheme.primaryText, size: 20),
-                ),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        '공유 기능은 준비 중입니다.',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      backgroundColor: AppTheme.primaryColor,
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
-                },
-              ),
-            ],
             title: AnimatedOpacity(
               duration: const Duration(milliseconds: 200),
               opacity: innerBoxIsScrolled ? 1.0 : 0.0,

@@ -7,6 +7,7 @@ import 'banner/banner.dart'; //배너
 import 'partner/partner_info.dart';  //이달의 파트너 선정배너
 import 'story/story.dart'; //이달의 스토리
 import 'review/review.dart'; //리뷰
+import 'review/review_all_screen.dart';
 import 'package:MoveSmart/screen/home/partner/partner.dart'; //이달의 파트너
 import 'banner/bottom_banner.dart';  //하단배너
 
@@ -250,6 +251,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
 
             // 리뷰 섹션
+// 리뷰 섹션
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -259,7 +261,26 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         AppCopy.reviewSectionTitle,
                         AppCopy.viewMoreReviews,
                             () {
-                          // 모든 리뷰 보기 페이지로 이동
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) =>
+                              const AllReviewsScreen(),
+                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                const begin = Offset(0.0, 1.0);
+                                const end = Offset.zero;
+                                const curve = Curves.easeOut;
+
+                                var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                                var offsetAnimation = animation.drive(tween);
+
+                                return SlideTransition(
+                                  position: offsetAnimation,
+                                  child: child,
+                                );
+                              },
+                            ),
+                          );
                         }
                     ),
 

@@ -218,7 +218,7 @@ class _EstimateStatusScreenState extends ConsumerState<EstimateStatusScreen> wit
                     ),
                     SizedBox(width: 12),
                     Text(
-                      '견적 요약 정보',
+                      '이사 요약 정보',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

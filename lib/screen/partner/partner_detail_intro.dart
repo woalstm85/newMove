@@ -94,7 +94,18 @@ class PartnerIntroductionTab extends StatelessWidget {
   Widget _buildPartnerInfoCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(context.defaultPadding),
-      decoration: context.cardDecoration(borderColor: AppTheme.borderSubColor),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        // Border 설정 제거
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -134,7 +145,18 @@ class PartnerIntroductionTab extends StatelessWidget {
   Widget _buildIntroductionCard(BuildContext context, String introText) {
     return Container(
       padding: EdgeInsets.all(context.defaultPadding),
-      decoration: context.cardDecoration(borderColor: AppTheme.borderSubColor),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        // Border 설정 제거
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -156,7 +178,18 @@ class PartnerIntroductionTab extends StatelessWidget {
   Widget _buildServicesCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(context.defaultPadding),
-      decoration: context.cardDecoration(borderColor: AppTheme.borderSubColor),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        // Border 설정 제거
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -234,7 +267,18 @@ class PartnerIntroductionTab extends StatelessWidget {
   Widget _buildRegionsCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(context.defaultPadding),
-      decoration: context.cardDecoration(borderColor: AppTheme.borderSubColor),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        // Border 설정 제거
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -282,7 +326,18 @@ class PartnerIntroductionTab extends StatelessWidget {
   Widget _buildConditionsCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(context.defaultPadding),
-      decoration: context.cardDecoration(borderColor: AppTheme.borderSubColor),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        // Border 설정 제거
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -317,7 +372,18 @@ class PartnerIntroductionTab extends StatelessWidget {
   Widget _buildAwardsCard(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(context.defaultPadding),
-      decoration: context.cardDecoration(borderColor: AppTheme.borderSubColor),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        // Border 설정 제거
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

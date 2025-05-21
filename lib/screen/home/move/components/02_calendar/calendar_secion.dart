@@ -34,6 +34,7 @@ class CalendarSection extends StatelessWidget {
       focusedDay: focusedDay,
       firstDay: DateTime.utc(2020, 1, 1),
       lastDay: DateTime(today.year + 1, today.month, today.day),
+      availableGestures: AvailableGestures.horizontalSwipe,
       selectedDayPredicate: (day) {
         return isSameDay(selectedDay, day);
       },

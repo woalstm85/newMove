@@ -555,7 +555,18 @@ class _PartnerSearchScreenState extends State<PartnerSearchScreen> {
       onTap: () => _navigateToPartnerDetail(partner),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
-        decoration: context.cardDecoration(borderColor: AppTheme.borderSubColor),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+          // Border 설정 제거
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(

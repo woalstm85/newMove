@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:MoveSmart/theme/theme_constants.dart';
-import 'review_analysis_widget.dart';
 import 'package:MoveSmart/utils/ui_extensions.dart';
 
 class PartnerReviewTab extends StatefulWidget {
@@ -22,6 +21,7 @@ class PartnerReviewTab extends StatefulWidget {
 class _PartnerReviewTabState extends State<PartnerReviewTab> {
   String _selectedFilter = '최신순';
   int _displayedReviewCount = 5; // 초기에 보여줄 리뷰 개수
+  bool _isServiceRatingExpanded = false; // 서비스 유형별 평가 확장 상태
 
   @override
   Widget build(BuildContext context) {
@@ -33,11 +33,6 @@ class _PartnerReviewTabState extends State<PartnerReviewTab> {
     widget.reviews.take(_displayedReviewCount).toList();
 
 
-// AI 리뷰 분석 위젯 추가
-    final aiReviewAnalysis = ReviewAnalysisWidget(
-      reviews: widget.reviews,
-      partnerId: widget.partnerName,
-    );
 
     // 별점 통계 계산
     double averageRating = reviews.isEmpty
@@ -63,14 +58,8 @@ class _PartnerReviewTabState extends State<PartnerReviewTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          aiReviewAnalysis,
           // 리뷰 통계 카드
           _buildReviewStatsCard(reviews, averageRating, ratingCounts),
-
-          SizedBox(height: context.defaultPadding),
-
-          // 리뷰 필터 섹션
-          _buildFilterSection(),
 
           // 리뷰 목록
           reviews.isEmpty
@@ -100,6 +89,33 @@ class _PartnerReviewTabState extends State<PartnerReviewTab> {
   Widget _buildReviewStatsCard(List<Map<String, dynamic>> reviews, double averageRating, Map<double, int> ratingCounts) {
     final int total = reviews.length;
 
+    // 서비스 유형별 평점 계산
+    Map<String, List<double>> serviceTypeRatings = {};
+    for (var review in reviews) {
+      String serviceType = review['serviceType'] as String;
+      double rating = review['rating'] as double;
+      if (!serviceTypeRatings.containsKey(serviceType)) {
+        serviceTypeRatings[serviceType] = [];
+      }
+      serviceTypeRatings[serviceType]!.add(rating);
+    }
+
+    // 서비스 유형별 평균 평점
+    Map<String, double> averageServiceRatings = {};
+    serviceTypeRatings.forEach((key, value) {
+      averageServiceRatings[key] = value.reduce((a, b) => a + b) / value.length;
+    });
+
+    // 가장 평점이 높은 서비스 유형
+    String? bestService;
+    double highestRating = 0;
+    averageServiceRatings.forEach((key, value) {
+      if (value > highestRating) {
+        highestRating = value;
+        bestService = key;
+      }
+    });
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -107,62 +123,113 @@ class _PartnerReviewTabState extends State<PartnerReviewTab> {
         borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            spreadRadius: 1,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '전체 리뷰',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.primaryText,
-            ),
+          // 헤더 섹션
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '전체 리뷰 요약',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryText,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${reviews.length}개 리뷰',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
+
+          // 메인 통계 섹션
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 평균 평점
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    averageRating.toStringAsFixed(1),
-                    style: TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryText,
+              // 평균 평점 - 더 시각적으로 구현
+              Container(
+                width: 120,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 원형 프로그레스 바로 평점 표시
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          height: 100,
+                          child: CircularProgressIndicator(
+                            value: averageRating / 5,
+                            strokeWidth: 8,
+                            backgroundColor: AppTheme.subtleText.withOpacity(0.2),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              _getRatingColor(averageRating),
+                            ),
+                          ),
+                        ),
+                        Column(
+                          children: [
+                            Text(
+                              averageRating.toStringAsFixed(1),
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primaryText,
+                              ),
+                            ),
+                            Text(
+                              '/ 5.0',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.secondaryText,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: List.generate(5, (index) {
-                      return Icon(
-                        index < averageRating.floor() ? Icons.star :
-                        (index == averageRating.floor() && averageRating % 1 > 0) ? Icons.star_half : Icons.star_border,
-                        color: AppTheme.warning,
-                        size: 18,
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${reviews.length}개의 리뷰',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.secondaryText,
+                    const SizedBox(height: 12),
+                    // 별점 표시
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return Icon(
+                          index < averageRating.floor() ? Icons.star :
+                          (index == averageRating.floor() && averageRating % 1 > 0) ? Icons.star_half : Icons.star_border,
+                          color: AppTheme.warning,
+                          size: 18,
+                        );
+                      }),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(width: 24),
+
               // 별점 분포
               Expanded(
                 child: Column(
@@ -181,120 +248,229 @@ class _PartnerReviewTabState extends State<PartnerReviewTab> {
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildFilterSection() {
-    return Container(
-      padding: EdgeInsets.all(context.defaultPadding),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-        border: Border.all(color: AppTheme.borderColor),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.filter_list,
-            size: 18,
-            color: AppTheme.secondaryText,
-          ),
-          SizedBox(width: context.smallPadding),
-          DropdownButton<String>(
-            value: _selectedFilter,
-            underline: Container(),
-            icon: Icon(Icons.arrow_drop_down, color: AppTheme.secondaryText),
-            items: <String>['최신순', '평점 높은순', '평점 낮은순']
-                .map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(
-                  value,
-                  style: context.bodyStyle(),
-                ),
-              );
-            }).toList(),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
+          const SizedBox(height: 20),
+
+          // 서비스 유형별 섹션 - 접을 수 있는 위젯으로 구현
+          if (averageServiceRatings.isNotEmpty) ...[
+            Divider(),
+            const SizedBox(height: 16),
+
+            // 확장 가능한 섹션 헤더
+            GestureDetector(
+              onTap: () {
                 setState(() {
-                  _selectedFilter = newValue;
-                  // 여기에서 실제 필터링 로직을 구현할 수 있음
+                  _isServiceRatingExpanded = !_isServiceRatingExpanded;
                 });
-              }
-            },
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: () {
-              // 리뷰 작성 로직 구현
-              context.showSnackBar('리뷰 작성 기능은 준비 중입니다.');
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                '리뷰 작성하기',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.primaryColor,
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '서비스 유형별 평가',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryText,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        // 가장 높은 평가 서비스를 헤더에 표시 (닫혀있을 때만)
+                        if (!_isServiceRatingExpanded && bestService != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            margin: const EdgeInsets.only(right: 8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.success.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '최고 평점: $bestService',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.success,
+                              ),
+                            ),
+                          ),
+                        // 확장 아이콘
+                        Icon(
+                          _isServiceRatingExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                          color: AppTheme.secondaryText,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
+
+            // 확장된 콘텐츠
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: _isServiceRatingExpanded
+                  ? (averageServiceRatings.length * 40 + 80).toDouble()
+                  : 0, // 닫혔을 때는 높이가 0
+              curve: Curves.easeInOut,
+              child: SingleChildScrollView(
+                physics: const NeverScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+
+                    // 서비스별 평점 리스트
+                    ...averageServiceRatings.entries.map((entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              entry.key,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.primaryText,
+                                fontWeight: entry.key == bestService ? FontWeight.bold : FontWeight.normal,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              ...List.generate(5, (index) {
+                                return Icon(
+                                  index < entry.value.floor() ? Icons.star :
+                                  (index == entry.value.floor() && entry.value % 1 > 0) ? Icons.star_half : Icons.star_border,
+                                  color: AppTheme.warning,
+                                  size: 14,
+                                );
+                              }),
+                              const SizedBox(width: 8),
+                              Text(
+                                entry.value.toStringAsFixed(1),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: _getRatingColor(entry.value),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    )).toList(),
+
+                    // 가장 높은 평가 서비스에 대한 특별 표시
+                    if (bestService != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.success.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.emoji_events,
+                              color: AppTheme.success,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '가장 높은 평가: $bestService (${highestRating.toStringAsFixed(1)}점)',
+                                style: TextStyle(
+                                  color: AppTheme.success,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
+// 평점에 따른 색상 반환
+  Color _getRatingColor(double rating) {
+    if (rating >= 4.5) return Colors.green;
+    if (rating >= 4.0) return Colors.lightGreen;
+    if (rating >= 3.5) return Colors.amber;
+    if (rating >= 3.0) return Colors.orange;
+    return Colors.redAccent;
+  }
+
+// 향상된 레이팅 바
   Widget _buildRatingBar(double rating, int count, int total) {
     final double percentage = total > 0 ? count / total : 0;
 
     return Row(
       children: [
-        Text(
-          rating.toStringAsFixed(1),
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.secondaryText,
-          ),
+        // 별점 아이콘으로 표시
+        Row(
+          children: [
+            Icon(Icons.star, size: 14, color: AppTheme.warning),
+            const SizedBox(width: 4),
+            Text(
+              rating.toStringAsFixed(1),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.secondaryText,
+              ),
+            ),
+          ],
         ),
-        SizedBox(width: context.smallPadding),
+        SizedBox(width: 12),
         Expanded(
           child: Stack(
             children: [
               // 배경 바
               Container(
-                height: 8,
+                height: 10,
                 decoration: BoxDecoration(
                   color: AppTheme.subtleText.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(5),
                 ),
               ),
-              // 채워진 바
+              // 채워진 바 - 그라디언트 사용
               Container(
-                height: 8,
+                height: 10,
                 width: percentage * MediaQuery.of(context).size.width * 0.5,
                 decoration: BoxDecoration(
-                  color: AppTheme.warning,
-                  borderRadius: BorderRadius.circular(4),
+                  gradient: LinearGradient(
+                    colors: [
+                      AppTheme.warning.withOpacity(0.7),
+                      AppTheme.warning,
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(5),
                 ),
               ),
             ],
           ),
         ),
-        SizedBox(width: context.smallPadding),
+        SizedBox(width: 12),
+        // 개수와 백분율 표시
         Text(
-          '$count',
+          '$count (${(percentage * 100).toStringAsFixed(0)}%)',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 14,
             color: AppTheme.secondaryText,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -304,7 +480,18 @@ class _PartnerReviewTabState extends State<PartnerReviewTab> {
   Widget _buildReviewCard(Map<String, dynamic> review) {
     return Container(
       padding: EdgeInsets.all(context.defaultPadding),
-      decoration: context.cardDecoration(borderColor: AppTheme.borderColor),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        // Border 설정 제거
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
