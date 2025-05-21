@@ -44,6 +44,264 @@ class _ReviewDetailScreenState extends State<ReviewDetailScreen> {
     return NumberFormat('#,###').format(amount) + '원';
   }
 
+  // 임의로 이미지 개수 결정하는 함수 (실제 구현에서는 필요 없음)
+  int _getImageCount(int id) {
+    // ID를 이용해 1~3 사이의 값 생성
+    return 1 + (id % 3);
+  }
+
+  // 이미지 갤러리 위젯 - 이미지 개수에 따라 레이아웃 조정
+  Widget _buildImageGallery(int count, int reviewId) {
+    // 갤러리 높이
+    final double galleryHeight = 150;
+
+    // 이미지가 없으면 빈 컨테이너 반환 (실제로는 발생하지 않음)
+    if (count == 0) return const SizedBox.shrink();
+
+    return SizedBox(
+      height: galleryHeight,
+      child: count == 1
+      // 이미지가 1개인 경우
+          ? _buildTappablePlaceholderImage(galleryHeight, 1, reviewId, 1)
+      // 이미지가 2~3개인 경우
+          : _buildMultipleTappablePlaceholderImages(count, galleryHeight, reviewId),
+    );
+  }
+
+  // 클릭 가능한 단일 플레이스홀더 이미지
+  Widget _buildTappablePlaceholderImage(double height, int index, int reviewId, int totalCount) {
+    // 이미지 인덱스에 따라 색상 약간 다르게 (시각적 구분을 위해)
+    final color = index % 2 == 0 ? Colors.grey.shade200 : Colors.grey.shade300;
+
+    return GestureDetector(
+      onTap: () {
+        _showImageViewer(context, index, reviewId, totalCount);
+      },
+      child: Container(
+        width: double.infinity,
+        height: height,
+        color: color,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // 메인 아이콘
+            Icon(
+              Icons.image,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+
+            // 왼쪽 상단에 이미지 번호 표시
+            Positioned(
+              top: 8,
+              left: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '이미지 $index',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+
+            // 클릭 가능함을 나타내는 아이콘 (우측 하단)
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.zoom_in,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 여러 클릭 가능한 플레이스홀더 이미지 (2~3개)
+  Widget _buildMultipleTappablePlaceholderImages(int count, double height, int reviewId) {
+    if (count == 2) {
+      // 2개 이미지 레이아웃 (좌우 분할)
+      return Row(
+        children: [
+          Expanded(
+            child: _buildTappablePlaceholderImage(height, 1, reviewId, count),
+          ),
+          const SizedBox(width: 2), // 이미지 사이 간격
+          Expanded(
+            child: _buildTappablePlaceholderImage(height, 2, reviewId, count),
+          ),
+        ],
+      );
+    } else {
+      // 3개 이미지 레이아웃 (1개 좌측 크게, 2개 우측 위아래 분할)
+      return Row(
+        children: [
+          // 좌측 큰 이미지
+          Expanded(
+            flex: 3,
+            child: _buildTappablePlaceholderImage(height, 1, reviewId, count),
+          ),
+          const SizedBox(width: 2), // 이미지 사이 간격
+          // 우측 두 개 이미지
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                // 상단 이미지
+                GestureDetector(
+                  onTap: () {
+                    _showImageViewer(context, 2, reviewId, count);
+                  },
+                  child: Container(
+                    height: height / 2 - 1, // 간격 고려
+                    width: double.infinity,
+                    color: Colors.grey.shade300,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(
+                          Icons.image,
+                          size: 30,
+                          color: Colors.grey.shade400,
+                        ),
+                        Positioned(
+                          top: 4,
+                          left: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              '이미지 2',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // 클릭 가능함을 나타내는 아이콘 (우측 하단)
+                        Positioned(
+                          bottom: 4,
+                          right: 4,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.zoom_in,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2), // 이미지 사이 간격
+                // 하단 이미지
+                GestureDetector(
+                  onTap: () {
+                    _showImageViewer(context, 3, reviewId, count);
+                  },
+                  child: Container(
+                    height: height / 2 - 1, // 간격 고려
+                    width: double.infinity,
+                    color: Colors.grey.shade200,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(
+                          Icons.image,
+                          size: 30,
+                          color: Colors.grey.shade400,
+                        ),
+                        Positioned(
+                          top: 4,
+                          left: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              '이미지 3',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // 클릭 가능함을 나타내는 아이콘 (우측 하단)
+                        Positioned(
+                          bottom: 4,
+                          right: 4,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.zoom_in,
+                              color: Colors.white,
+                              size: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+  }
+
+  // 이미지 뷰어 다이얼로그 표시
+  void _showImageViewer(BuildContext context, int imageIndex, int reviewId, int totalCount) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImageViewerScreen(
+          imageIndex: imageIndex,
+          reviewId: reviewId,
+          totalCount: totalCount,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final int starCount = review != null && review!['startCnt'] != null ?
@@ -178,6 +436,24 @@ class _ReviewDetailScreenState extends State<ReviewDetailScreen> {
                         ),
 
                         const SizedBox(height: 16),
+
+                        // 이미지 갤러리 (리뷰 ID가 있는 경우에만 표시)
+                        if (review!['id'] != null)
+                          Builder(
+                            builder: (context) {
+                              final int reviewId = review!['id'] is int
+                                  ? review!['id']
+                                  : int.parse(review!['id'].toString());
+                              final int imageCount = _getImageCount(reviewId);
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildImageGallery(imageCount, reviewId),
+                                  const SizedBox(height: 16),
+                                ],
+                              );
+                            },
+                          ),
 
                         // 금액 및 별점을 한 줄에 배치
                         Row(
@@ -405,6 +681,137 @@ class _ReviewDetailScreenState extends State<ReviewDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// 이미지 뷰어 화면
+class ImageViewerScreen extends StatefulWidget {
+  final int imageIndex;
+  final int reviewId;
+  final int totalCount;
+
+  const ImageViewerScreen({
+    Key? key,
+    required this.imageIndex,
+    required this.reviewId,
+    required this.totalCount,
+  }) : super(key: key);
+
+  @override
+  _ImageViewerScreenState createState() => _ImageViewerScreenState();
+}
+
+class _ImageViewerScreenState extends State<ImageViewerScreen> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.imageIndex;
+    _pageController = PageController(initialPage: widget.imageIndex - 1);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
+          title: Text(
+            '이미지 ${_currentIndex}/${widget.totalCount}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          ),
+        ),
+        body: GestureDetector(
+          onTap: () {
+            Navigator.pop(context);
+          },
+          child: Stack(
+            children: [
+              // 이미지 페이지 뷰
+              PageView.builder(
+                controller: _pageController,
+                itemCount: widget.totalCount,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentIndex = index + 1;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  return InteractiveViewer(
+                    minScale: 0.5,
+                    maxScale: 3.0,
+                    child: Center(
+                      child: Container(
+                        width: double.infinity,
+                        height: 300,
+                        color: (index % 2 == 0) ? Colors.grey.shade300 : Colors.grey.shade400,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Icon(
+                              Icons.image,
+                              size: 100,
+                              color: Colors.grey.shade200,
+                            ),
+                            Text(
+                              '이미지 ${index + 1}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              // 하단 이미지 인디케이터
+              if (widget.totalCount > 1)
+                Positioned(
+                  bottom: 20,
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      widget.totalCount,
+                          (index) => Container(
+                        width: 8,
+                        height: 8,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _currentIndex == index + 1
+                              ? Colors.white
+                              : Colors.white.withOpacity(0.5),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

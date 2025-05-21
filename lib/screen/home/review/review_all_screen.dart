@@ -177,8 +177,10 @@ class _AllReviewsScreenState extends State<AllReviewsScreen> {
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedFilter,
+
                 icon: const Icon(Icons.keyboard_arrow_down, size: 18),
                 style: TextStyle(color: AppTheme.primaryText, fontSize: 14),
+                dropdownColor: Colors.white,
                 items: _filters.map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,

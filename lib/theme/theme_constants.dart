@@ -8,6 +8,12 @@ class AppTheme {
   static const Color accentColor = Color(0xFF8864EF); // 강조 색상 (보라색 계열)
   static const Color greenColor = Color(0xFF009688); // 강조 색상 (녹색 계열)
 
+  // 주요 색상
+  static const Color primarySubColor = Color(0xFFF2F7FA); // 주요 색상 (파란색 계열)
+  static const Color secondarySubColor = Color(0xFFF3F2FA); // 보조 색상 (주황색 계열)
+  static const Color accentSubColor = Color(0xFFCCC1F1); // 강조 색상 (보라색 계열)
+  static const Color greenSubColor = Color(0xFFF4FBF4); // 강조 색상 (녹색 계열)
+
   // 배경 색상
   static const Color scaffoldBackground = Color(0xFFFAFAFC); // 연한 그레이 배경
   static const Color cardBackground = Colors.white; // 카드 배경색
