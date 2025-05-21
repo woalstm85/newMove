@@ -119,15 +119,22 @@ class StorySlider extends StatelessWidget {
           return GestureDetector(
             onTap: () => _openWebView(context, blogUrl),
             child: Container(
-              width: 280,
+              width: 260,
               margin: EdgeInsets.only(
                 left: index == 0 ? 0 : 12,
                 right: 12,
+                bottom: 10,
               ),
               decoration: BoxDecoration(
                 color: AppTheme.cardBackground,
                 borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-                boxShadow: [AppTheme.cardShadow],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

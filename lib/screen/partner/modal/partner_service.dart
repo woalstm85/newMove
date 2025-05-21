@@ -27,6 +27,12 @@ Future<String?> showServiceDialog(BuildContext context) {
       'description': '일정 기간 물품 보관 후 이사',
       'icon': Icons.inventory_2,
     },
+    {
+      'id': 'S0050',
+      'name': '단순운송',
+      'description': '가구 1~점, 대형가전제품 이동',
+      'icon': Icons.inventory_2,
+    },    
   ];
 
   return showModalBottomSheet<String>(

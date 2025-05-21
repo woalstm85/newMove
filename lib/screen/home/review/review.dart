@@ -95,9 +95,9 @@ class ReviewSlider extends StatelessWidget {
   // 리뷰 리스트 UI
   Widget _buildReviewList(BuildContext context) {
     return SizedBox(
-      height: 220,
+      height: 230,
       child: ListView.builder(
-        padding: const EdgeInsets.only(left: 0, right: 0),
+        padding: const EdgeInsets.only(left: 0, right: 0, bottom: 15),
         scrollDirection: Axis.horizontal,
         itemCount: reviews.length,
         itemBuilder: (context, index) {
@@ -147,7 +147,13 @@ class ReviewSlider extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppTheme.cardBackground,
                 borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-                boxShadow: [AppTheme.cardShadow],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),

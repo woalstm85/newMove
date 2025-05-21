@@ -251,7 +251,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
 
             // 리뷰 섹션
-// 리뷰 섹션
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -288,7 +287,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       reviews: _reviews,
                       isLoading: _isLoading,
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 25),
                   ],
                 ),
               ),
