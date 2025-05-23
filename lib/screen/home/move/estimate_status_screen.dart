@@ -85,14 +85,13 @@ class _EstimateStatusScreenState extends ConsumerState<EstimateStatusScreen> wit
         centerTitle: true,
       ),
       body: SafeArea(
-        bottom: false,
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           padding: EdgeInsets.only(
             left: context.defaultPadding,
             right: context.defaultPadding,
             top: context.defaultPadding,
-            bottom: MediaQuery.of(context).padding.bottom + 24,
+            bottom: context.defaultPadding,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
